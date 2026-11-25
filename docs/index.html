@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RatMath Complex</title>
+<meta property="og:title" content="RatMath Complex">
+<meta property="og:description" content="Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/complex/">
+<meta name="description" content="Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css?v=87e967ceab">
+<script type="module" src="assets/site.js?v=87e967ceab"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">@ratmath/complex</div>
+<h1>Complex numbers, branches and contours, certified</h1>
+<p class="lede">Exact complex rationals, elementary functions that say which branch they took, and complex analysis with proofs: contour integrals, residues and zero counts enclosed in rectangles that are guaranteed to contain the truth. Quaternions and octonions live here too.</p>
+<p class="notice"><strong>Planned, not built yet.</strong> This site is the frame the package will grow into. The full plan is in the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex">library roadmap</a>, and the <a href="https://ratmath.com/shelf/">RatMath Shelf</a> page lists what exists across all the libraries.</p>
+
+<h2>What it will cover</h2>
+<ul>
+  <li>Exact complex rationals, rectangles and discs as enclosures, polar form.</li>
+  <li>Elementary functions (exp, log, powers, roots, trigonometric) that report the branch used and when a cut is crossed.</li>
+  <li>Quaternions and octonions by the Cayley–Dickson construction, rotations, integer quaternions.</li>
+  <li>Complex Taylor models, contour integrals, the argument principle and isolation of zeros.</li>
+  <li>Residues, Laurent series, classification of singularities, real integrals by residues.</li>
+  <li>Möbius and conformal maps, with pictures through graphics.</li>
+  <li>The complex gamma and zeta functions.</li>
+</ul>
+
+<h2>The order of work</h2>
+<p>The phases below come from the roadmap. Sizes are rough estimates in lines of source.</p>
+<div class="tablewrap"><table class="plan">
+<tr><th>Phase</th><th>Contents</th><th>Estimate</th></tr>
+<tr><td>1</td><td>Exact complex rationals, rectangles and discs, polar form, elementary functions with branch reporting</td><td>1,400</td></tr>
+<tr><td>2</td><td>Cayley–Dickson numbers, quaternion rotations, integer quaternions</td><td>700</td></tr>
+<tr><td>3</td><td>Complex Taylor models; contour integrals; argument principle and zero isolation</td><td>2,200</td></tr>
+<tr><td>4</td><td>Residues, Laurent series, singularities, real integrals by residues</td><td>800</td></tr>
+<tr><td>5</td><td>Möbius and conformal maps; graphics hooks</td><td>600, plus 800 in graphics</td></tr>
+<tr><td>6</td><td>Complex gamma and zeta</td><td>700</td></tr>
+</table></div>
+<p>It will build on: Core and analytic (real enclosures of exp, sin, atan and the constants), and optionally algebraic for conversions.</p>
+
+<h2>How the docs will be laid out</h2>
+<p>Like every library on the Shelf: this overview, an <a href="explore.html">Explore</a> page for trying things without writing code, a <a href="reference.html">Reference</a> listing every function, and one page per topic that explains the usage and the mathematics. Every page ends with a box of code you can edit and run.</p>
+<div class="cards" id="cards"></div>
+
+<h2>Until then</h2>
+<p>The box below already runs, with <code>@ratmath/core</code> in scope. It shows the kind of exactness the package is built on, done by hand.</p>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/complex</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// Complex arithmetic on pairs of exact fractions, by hand for now.
+const C = (re, im) =&gt; ({ re: new Rational(re), im: new Rational(im) });
+const mul = (a, b) =&gt; ({ re: a.re.multiply(b.re).subtract(a.im.multiply(b.im)), im: a.re.multiply(b.im).add(a.im.multiply(b.re)) });
+const show = (z) =&gt; `${z.re} + ${z.im}i`;
+// (3/5 + 4/5 i) lies on the unit circle, so its powers do too: exactly.
+const z = { re: new Rational(3, 5), im: new Rational(4, 5) };
+let w = C(1, 0);
+for (let k = 1; k &lt;= 5; k += 1) {
+  w = mul(w, z);
+  PRINT(`z^${k} =`, show(w), "  |z|² =", w.re.pow(2).add(w.im.pow(2)).toString());
+}
+plan.map((p) =&gt; `${p.phase}. ${p.contents}`)</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<footer class="sitelinks"><a href="https://github.com/ratmath/complex">GitHub</a> · <a href="https://ratmath.com/">ratmath.com</a> · <a href="https://ratmath.com/shelf/">shelf</a> · <a href="https://ratmath.com/core/">core</a></footer>
+</article>
+</main>
+</div>
+<script type="module">
+import { topicCards } from "./assets/site.js?v=87e967ceab";
+topicCards(document.getElementById("cards"));
+</script>
+</body>
+</html>
