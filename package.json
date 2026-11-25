@@ -1,0 +1,59 @@
+{
+  "name": "@ratmath/complex",
+  "version": "0.0.0",
+  "description": "Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "test": "bun test ./tests",
+    "docs:build": "bun scripts/build-docs.js"
+  },
+  "keywords": [
+    "complex",
+    "quaternion",
+    "octonion",
+    "contour-integral",
+    "residue",
+    "exact",
+    "ratmath"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ratmath/complex.git"
+  },
+  "homepage": "https://ratmath.com/complex/",
+  "bugs": {
+    "url": "https://github.com/ratmath/complex/issues"
+  },
+  "dependencies": {
+    "@ratmath/core": "^0.10.0"
+  },
+  "devDependencies": {
+    "katex": "0.19.1"
+  },
+  "types": "index.d.ts",
+  "author": "James Taylor",
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
