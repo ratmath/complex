@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Möbius maps · RatMath Complex</title>
+<meta name="description" content="Möbius transformations over the complex rationals: three points to three, the cross-ratio, classification, fixed points, and circles mapped exactly.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Topic</div>
+<h1>Möbius maps</h1>
+<p class="lede">The maps z ↦ (az + b)/(cz + d) are the conformal bijections of the Riemann sphere. With complex rational coefficients they are exact: rational points go to rational points, circles to circles, and the cross-ratio of four points never changes.</p>
+<pre><code>const T = mobiusFrom([0, 1, infinity], ["i", 1, -1]);   // the one map sending three points to three
+T.apply("1/2");                       // an exact complex rational
+crossRatio(2, "i", 0, infinity);      // -2i
+concyclic(1, "i", -1, "-i");          // true: the cross-ratio is real
+mobius(1, 1, 1, 0).classify();        // "loxodromic"
+circle(0, 1).map(cayley().inverse()); // the line y = 0, exactly</code></pre>
+
+<h2>The maps</h2>
+<p>A Möbius map is given by a matrix \(\begin{pmatrix} a &amp; b \\ c &amp; d\end{pmatrix}\) with \(ad - bc \ne 0\), and composing maps multiplies matrices. Multiplying the matrix by a number gives the same map, so <code>equals</code> compares matrices up to a factor. The point at infinity is <code>infinity</code>: \(-d/c\) goes there, and it goes to \(a/c\).</p>
+<p>Any three distinct points can be sent to any three by exactly one Möbius map. <code>mobiusFrom</code> builds it as \(S_w^{-1} \circ S_z\), where \(S_z\) sends \(z_1, z_2, z_3\) to 0, 1, ∞ (any of them may be ∞).</p>
+
+<h2>The cross-ratio</h2>
+\[ (z_1, z_2; z_3, z_4) = \frac{(z_1 - z_3)(z_2 - z_4)}{(z_2 - z_3)(z_1 - z_4)} \]
+<p>is the image of \(z_1\) under the map sending \(z_2, z_3, z_4\) to 1, 0, ∞, and so every Möbius map keeps it. It is real exactly when the four points lie on one circle or line, which makes <code>concyclic</code> an exact test.</p>
+
+<h2>What kind of map</h2>
+<p>The number \(\tau = (a + d)^2/(ad - bc)\) does not change when the matrix is scaled or the map is conjugated, and it decides what the map does near its fixed points:</p>
+<ul>
+<li><strong>parabolic</strong>, τ = 4: one fixed point, like z ↦ z + 1;</li>
+<li><strong>elliptic</strong>, τ real in [0, 4): a rotation about two fixed points, like z ↦ e^{iθ}z;</li>
+<li><strong>hyperbolic</strong>, τ real and greater than 4: a stretch from one fixed point towards the other, like z ↦ 2z;</li>
+<li><strong>loxodromic</strong>, otherwise: a stretch and a turn together.</li>
+</ul>
+<p>With rational coefficients τ is a complex rational and the test is exact. The fixed points solve \(cz^2 + (d - a)z - b = 0\). When the square root of the discriminant is a complex rational they are exact; otherwise they come back as certified rectangles, such as the golden ratio for z ↦ 1 + 1/z.</p>
+
+<h2>Circles and lines</h2>
+<p>Write a circle or a line as \(A|z|^2 + \bar B z + B\bar z + C = 0\) with A and C rational and B a complex rational. When A ≠ 0 it is the circle with centre \(-B/A\) and radius² \((|B|^2 - AC)/A^2\), and when A = 0 it is a line. The form is a Hermitian matrix H, and a Möbius map M sends it to \((M^{-1})^* H M^{-1}\), so the image of a circle is computed exactly, without sampling, and a circle through the pole becomes a line. <code>circle(c, r2)</code>, <code>lineThrough</code> and <code>circleThrough</code> build them, and <code>contains</code> tests a point exactly.</p>
+
+<div class="tablewrap"><table class="ref">
+<tr><th>call</th><th>returns</th></tr>
+<tr><td>mobius(a, b, c, d), mobiusFrom(from, to)</td><td>Mobius: apply, compose, inverse, equals, det, traceSquared, classify, fixedPoints, isSphereRotation, applyFloat</td></tr>
+<tr><td>infinity, isInfinity(z)</td><td>The point at infinity</td></tr>
+<tr><td>crossRatio(z1, z2, z3, z4), concyclic(…)</td><td>A Complex or infinity; a boolean</td></tr>
+<tr><td>circle(center, r2), lineThrough(z1, z2), circleThrough(z1, z2, z3)</td><td>GCircle: isLine, center, radius2, value, contains, equals, map(T)</td></tr>
+</table></div>
+<template data-runbox>
+const T = mobiusFrom([0, 1, infinity], ["i", 1, -1]);
+PRINT(String(T), "  kind:", T.classify());
+for (const z of [0, 1, infinity, "1/2", "2 + i"]) PRINT(`  ${String(z)} ↦ ${String(T.apply(z))}`);
+PRINT("cross-ratio (2, i; 0, ∞) =", String(crossRatio(2, "i", 0, infinity)));
+const pts = [0, 1, "1/2", "3/4"].map((t) =&gt; { const s = new Rational(t); return complex(s.multiply(s).negate().add(new Rational(1)).divide(s.multiply(s).add(new Rational(1))), new Rational(2).multiply(s).divide(s.multiply(s).add(new Rational(1)))); });
+PRINT("four rational points on the unit circle:", pts.map(String).join(", "), "→ concyclic", concyclic(...pts));
+PRINT("and their images under T, still concyclic:", concyclic(...pts.map((z) =&gt; T.apply(z))));
+for (const [name, M] of [["z ↦ 2z", mobius(2, 0, 0, 1)], ["z ↦ iz", mobius("i", 0, 0, 1)], ["z ↦ z + 1", mobius(1, 1, 0, 1)], ["z ↦ 1 + 1/z", mobius(1, 1, 1, 0)]]) {
+  const f = M.fixedPoints();
+  PRINT(`${name}: ${M.classify()}, τ = ${String(M.traceSquared)}, fixed points ${f.points.map((p) =&gt; (p.toString ? p.toString(8) : String(p))).join(" and ")}`);
+}
+`the unit circle under ${String(T)}: ${String(circle(0, 1).map(T))}`
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

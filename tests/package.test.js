@@ -3,9 +3,8 @@ import * as lib from "../index.js";
 
 test("the package loads and says what is still planned", () => {
   expect(Array.isArray(lib.plan)).toBe(true);
-  expect(lib.plan.length).toBe(4);
+  expect(lib.plan.map((p) => p.phase)).toEqual([3, 4, 6]);
   lib.plan.forEach((p, i) => {
-    expect(p.phase).toBe(i + 3);
     expect(typeof p.contents).toBe("string");
     expect(typeof p.estimate).toBe("string");
   });

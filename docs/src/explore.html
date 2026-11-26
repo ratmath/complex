@@ -48,6 +48,14 @@
 <div id="ex-rot"></div>
 </div>
 
+<h2>A Möbius map</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-mf">Send</label><input id="ex-mf" class="text" value="0; 1; ∞" spellcheck="false"><label for="ex-mt">to</label><input id="ex-mt" class="text" value="-1; i; 1" spellcheck="false"></div>
+<div id="ex-mob-pic"></div>
+<div id="ex-mob"></div>
+</div>
+<p>Three points separated by semicolons, ∞ allowed. The picture shows where the lines Re z = −2, −3/2, …, 2 and Im z = −2, …, 2 go: each image is an exact circle or line.</p>
+
 <h2>Four squares</h2>
 <div class="demo">
 <div class="demo-row"><label for="ex-four">Whole number</label><input id="ex-four" class="text" value="2026" spellcheck="false"></div>
@@ -222,6 +230,47 @@ $("ex-four").addEventListener("input", four);
 all();
 rotation();
 four();
+const svgEl = (tag, attrs) => {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+};
+function mobiusPanel() {
+  const out = $("ex-mob");
+  const pic = $("ex-mob-pic");
+  try {
+    const pts = (s) => s.split(";").map((t) => t.trim()).map((t) => (t === "∞" || t === "inf" || t === "infinity" ? S.infinity : t));
+    const T = S.mobiusFrom(pts($("ex-mf").value), pts($("ex-mt").value));
+    const g = S.gridImage(T, { re: [-2, 2], im: [-2, 2], step: "1/2" });
+    const W = 320, R = 3;
+    const sx = (x) => W / 2 + (x / R) * (W / 2), sy = (y) => W / 2 - (y / R) * (W / 2), sr = (r) => (r / R) * (W / 2);
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${W}`, width: W, height: W, role: "img", "aria-label": "image of a grid", style: "max-width:100%;height:auto;border:1px solid #8884;border-radius:8px" });
+    svg.append(svgEl("circle", { cx: sx(0), cy: sy(0), r: sr(1), fill: "none", stroke: "currentColor", "stroke-opacity": "0.25", "stroke-dasharray": "3 3" }));
+    for (const { from, image } of g.lines) {
+      const colour = from.startsWith("re") ? "var(--accent, #c2410c)" : "#2563eb";
+      if (image.isLine) {
+        // 2Bx x + 2By y + C = 0: draw a long segment
+        const [a, b, c] = [2 * image.B.re.toNumber(), 2 * image.B.im.toNumber(), image.C.toNumber()];
+        const n = a * a + b * b;
+        const p0 = [(-a * c) / n, (-b * c) / n];
+        const d = [-b / Math.sqrt(n), a / Math.sqrt(n)];
+        svg.append(svgEl("line", { x1: sx(p0[0] - 10 * d[0]), y1: sy(p0[1] - 10 * d[1]), x2: sx(p0[0] + 10 * d[0]), y2: sy(p0[1] + 10 * d[1]), stroke: colour, "stroke-width": "1.2", "stroke-opacity": "0.8" }));
+      } else {
+        const [cx, cy] = image.center.toNumbers();
+        svg.append(svgEl("circle", { cx: sx(cx), cy: sy(cy), r: sr(Math.sqrt(image.radius2.toNumber())), fill: "none", stroke: colour, "stroke-width": "1.2", "stroke-opacity": "0.8" }));
+      }
+    }
+    pic.replaceChildren(svg);
+    const f = T.fixedPoints();
+    const fp = f.points === "every point" ? "every point" : f.points.map((p) => (p.toString ? p.toString(10) : String(p))).join(" and ");
+    out.replaceChildren(h("p", {}, `${String(T)}: ${T.classify()}, τ = ${String(T.traceSquared)}, fixed points ${fp}${f.exact ? "" : " (enclosed)"}. Re z = 0 goes to ${String(g.lines[4].image)}.`));
+  } catch (e) {
+    pic.replaceChildren();
+    out.replaceChildren(h("div", { class: "out err" }, e.message));
+  }
+}
+for (const id of ["ex-mf", "ex-mt"]) $(id).addEventListener("input", mobiusPanel);
+mobiusPanel();
 </script>
 </body>
 </html>

@@ -63,6 +63,18 @@
 <tr><td><code>refined(name, z, options)</code></td><td>A Core <code>Refinement</code>: <code>.quick</code> at once, <code>.exact()</code> certified.</td></tr>
 <tr><td><code>plan</code></td><td>The phases still to come.</td></tr>
 </table></div>
+<h2>Möbius maps and the Riemann sphere</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td>mobius(a, b, c, d), mobiusFrom(from, to), Mobius</td><td>z ↦ (az + b)/(cz + d), exactly: apply, compose, inverse, equals, classify, fixedPoints, isSphereRotation. See <a href="mobius.html">Möbius maps</a>.</td></tr>
+<tr><td>infinity, isInfinity</td><td>The point at infinity.</td></tr>
+<tr><td>crossRatio, concyclic</td><td>The invariant of four points; the exact test for lying on one circle or line.</td></tr>
+<tr><td>circle(c, r2), lineThrough, circleThrough, GCircle</td><td>Circles and lines as Hermitian forms, mapped exactly by <code>map(T)</code>.</td></tr>
+<tr><td>toSphere, fromSphere, chordal2</td><td>Stereographic projection, exact. See <a href="riemann-sphere.html">The Riemann sphere</a>.</td></tr>
+<tr><td>cayley, halfPlaneToDisc, discAutomorphism, joukowski, regions</td><td>Conformal maps of the standard regions.</td></tr>
+<tr><td>gridImage, sampleGrid</td><td>Data for pictures: exact image circles of a grid; sampled values (estimated).</td></tr>
+</table></div>
+
 <h2>@ratmath/complex/cayley: the algebras</h2>
 <div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
