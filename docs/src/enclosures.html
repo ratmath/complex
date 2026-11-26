@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rectangles and discs · RatMath Complex</title>
+<meta name="description" content="Rectangles and discs with rational data as certified enclosures of complex numbers in @ratmath/complex.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Rectangles and discs</div>
+<h1>Rectangles and discs</h1>
+<p class="lede">Most complex numbers worth computing are not rational. An enclosure is a set with rational data that is proven to contain the number: a rectangle with sides along the axes, or a disc. Arithmetic on enclosures gives enclosures of every possible result.</p>
+
+<h2>Rectangles</h2>
+<p>A <code>Rect</code> is a real interval for the real part and another for the imaginary part.</p>
+<pre><code>import { rect, Rect } from "@ratmath/complex";
+
+rect([1, 2], [0, 1]);        // [1, 2] + i[0, 1]
+rect("1 + i", "1/10");       // the square of half-width 1/10 around 1 + i
+rect("3 - 4i");              // a single point
+
+const r = rect("1 + i", "1/10");
+String(r);                   // "1 + 1i ± 1e-1": the midpoint, then the half-size
+String(r.center);            // "1 + i"
+r.contains("21/20 + 19/20i");    // true
+r.real;                      // a Core RationalInterval; r.imag too
+r.corners();                 // four Complex values
+r.split();                   // four quarters</code></pre>
+<p>The operations are <code>add sub mul div inv neg conj scale pow</code>, and <code>hull</code>, <code>intersect</code>, <code>contains</code>, <code>intersects</code> for sets. Each returns a rectangle containing \(z \circ w\) for every \(z\) in the first and \(w\) in the second:</p>
+\[ ([a] + i[b])\,([c] + i[d]) = ([a][c] - [b][d]) + i\,([a][d] + [b][c]) \]
+<p>with real interval arithmetic on the right. Division multiplies by \(\bar w / |w|^2\) and refuses (code <code>division-by-zero</code>) when the divisor contains 0.</p>
+
+<h2>Reading a printed rectangle</h2>
+<p>A point prints exactly. Anything wider prints its midpoint to the digits asked for and then <code>±</code> the half-size, so <code>1.4686939399 + 2.2873552872i ± 1.7e-21</code> means both parts are within \(1.7\times10^{-21}\) of an exact rational midpoint whose leading digits are shown. <code>toString(40)</code> shows forty digits; <code>toJSON()</code> gives the four exact corners.</p>
+
+<h2>Discs</h2>
+<p>A <code>Disc</code> is a rational centre and a rational radius.</p>
+<pre><code>import { disc } from "@ratmath/complex";
+
+const d = disc("1 + i", "1/10");
+String(d.mul(disc("2", "1/10")));   // "disc(2 + 2i, 0.35142135624)"
+String(disc("2", 1).inv());         // "disc(2/3, 0.33333333333)": exactly centre 2/3, radius 1/3
+disc(0, 1).contains("3/5 + 4/5i");  // true, decided exactly
+d.toRect();  r.toDisc();            // each contains the other shape</code></pre>
+<p>Two facts make discs pleasant. Inclusion and intersection are decided exactly from \(|c_1 - c_2|^2\) with no square roots, and the image of a disc under \(z \mapsto 1/z\) is again a disc, exactly:</p>
+\[ \frac{1}{D(c, r)} = D\!\left(\frac{\bar c}{|c|^2 - r^2},\ \frac{r}{|c|^2 - r^2}\right) \qquad (|c| > r). \]
+<p>A product uses \(|zw - c_1c_2| \le |c_1| r_2 + |c_2| r_1 + r_1 r_2\), with the moduli rounded upward.</p>
+
+<h2>Which to use</h2>
+<p>Rectangles fit the functions: \(e^z\), \(\sin z\) and \(\log z\) separate into real functions of \(x\) and \(y\), so their images of a rectangle are easy to bound tightly. That is why the functions in this package return rectangles. Discs fit multiplication: multiplying by a number of modulus 1 turns a disc without growing it, while a rectangle must be redrawn around its turned self and grows by up to \(\sqrt2\) each time. The box at the end of this page shows a rectangle growing thousands of times over in twenty multiplications, while the disc grows only as much as twenty-one uncertain factors must.</p>
+
+<h2>Functions of an enclosure</h2>
+<p>Every function in <a href="functions.html">Functions</a> takes a rectangle or a disc as well as an exact number. The output then contains the value at every point of the input, so an uncertain measurement can be carried through a calculation and the uncertainty of the result read off at the end.</p>
+<template data-runbox>
+// Multiply by a point near the unit circle twenty times, as a rectangle and as a disc.
+const start = "3/5 + 4/5i";
+let r = rect(start, "1/1000"), d = disc(start, "1/1000");
+const r0 = r, d0 = d;
+for (let k = 1; k &lt;= 20; k++) {
+  r = r.mul(r0).round(60);
+  d = d.mul(d0);
+  if (k % 5 === 0) PRINT(`after ${k}:  rectangle size ${r.size.toNumber().toExponential(2)}   disc diameter ${(2 * d.radius.toNumber()).toExponential(2)}`);
+}
+// Both still contain the exact answer.
+const exact = complex(start).pow(21);
+PRINT("exact answer inside both:", r.contains(exact), d.contains(exact));
+
+// 1/z of a disc is a disc; of a rectangle, only something bigger.
+PRINT("1/disc(2, 1) =", disc("2", 1).inv().toString());
+PRINT("1/rect(2 ± 1) =", rect("2", 1).inv().toString());
+
+// An uncertain input through a function
+const z = rect("1 + i", "1/100");
+PRINT("sin of", z.toString(), "is in", sin(z).toString());
+sin(z).contains(sin("1 + i"))
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

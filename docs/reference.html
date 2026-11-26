@@ -3,17 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Complex Reference</title>
-<meta property="og:title" content="Complex Reference">
+<title>Reference · RatMath Complex</title>
+<meta property="og:title" content="Reference · RatMath Complex">
 <meta property="og:description" content="Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ratmath.com/complex/reference.html">
-<meta name="description" content="Every function of @ratmath/complex.">
+<meta name="description" content="Every export of @ratmath/complex and @ratmath/complex/cayley.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=87e967ceab">
-<script type="module" src="assets/site.js?v=87e967ceab"></script>
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/style.css?v=4173def1a7">
+<script type="module" src="assets/site.js?v=4173def1a7"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,17 +23,104 @@
 <article>
 <div class="eyebrow">Reference</div>
 <h1>Everything in the library</h1>
-<p class="lede">Every export of <code>@ratmath/complex</code> will be listed here with what it takes and what it returns.</p>
-<p class="notice"><strong>Planned, not built yet.</strong> This site is the frame the package will grow into. The full plan is in the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex">library roadmap</a>, and the <a href="https://ratmath.com/shelf/">RatMath Shelf</a> page lists what exists across all the libraries.</p>
-<div class="tablewrap"><table class="ref" id="ref">
+<p class="lede">Every export of <code>@ratmath/complex</code> and of <code>@ratmath/complex/cayley</code>. Anything called <code>z</code> below is a <code>Complex</code>, text, a pair or a real number, and for the functions also a <code>Rect</code> or a <code>Disc</code>. <code>bits</code> is the precision in binary digits and defaults to 64.</p>
+<h2>Complex rationals</h2>
+<div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
-<tr><td>plan</td><td>The list of planned phases, each { phase, contents, estimate }. It is here so the package has something to load while it is empty, and it shrinks as phases are built.</td></tr>
+<tr><td><code>complex(re, im)</code></td><td>A <code>Complex</code> from text (<code>"3 - 4i"</code>, <code>"(1 + i)^8"</code>), two parts, a <code>[re, im]</code> pair or a real number in any form Core reads.</td></tr>
+<tr><td><code>Complex</code></td><td><code>.re</code>, <code>.im</code> (Core Rationals); <code>add sub mul div neg conj inv pow(n) scale(q)</code>; <code>norm()</code> = |z|²; <code>exactModulus()</code> and <code>exactSqrt()</code> (null when irrational); <code>equals isZero isReal isImaginary isGaussianInteger</code>; <code>toString toTeX toJSON toNumbers</code>. <code>Complex.parse(text)</code>, <code>Complex.from(x)</code>, <code>Complex.ZERO ONE I</code>.</td></tr>
+<tr><td><code>CQ</code></td><td>The field <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="double-struck">Q</mi><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\mathbb{Q}(i)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathbb">Q</span><span class="mopen">(</span><span class="mord mathnormal">i</span><span class="mclose">)</span></span></span></span> as a RatMath field object, for linalg and structures.</td></tr>
+<tr><td><code>ComplexError</code></td><td>Thrown with a <code>code</code>: <code>division-by-zero</code>, <code>branch-cut</code>, <code>branch-point</code>, <code>pole</code>, <code>precision</code>, <code>bad-option</code>; and from the cayley entry point <code>no-quotient</code>, <code>not-a-rotation</code>, <code>too-large</code>.</td></tr>
+</table></div>
+<h2>Enclosures</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>rect(a, b)</code></td><td><code>rect("1 + 2i")</code> a point; <code>rect([0, 1], [2, 3])</code> the rectangle [0,1] + i[2,3]; <code>rect(z, radius)</code> the square around z.</td></tr>
+<tr><td><code>Rect</code></td><td><code>.re</code>, <code>.im</code> as <code>{ lo, hi }</code>; <code>.real</code>, <code>.imag</code> as Core RationalIntervals; <code>center width height size isPoint</code>; <code>add sub mul div inv neg conj scale timesI pow</code>; <code>contains intersects intersect hull containsZero</code>; <code>corners() split() round(bits) toDisc() normRange()</code>; <code>toString(digits) toJSON()</code>. <code>Rect.from(x)</code>, <code>Rect.hull(...items)</code>.</td></tr>
+<tr><td><code>disc(center, radius)</code></td><td>The closed disc with rational centre and radius.</td></tr>
+<tr><td><code>Disc</code></td><td><code>.center</code>, <code>.radius</code>; <code>add sub mul div inv neg conj scale</code>; <code>contains intersects hull containsZero</code> (decided exactly); <code>toRect()</code>.</td></tr>
+</table></div>
+<h2>Polar form</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>polar(z, bits)</code></td><td><code>{ modulus, argument, normSquared, exactModulus, exactTurn }</code> for an exact z; the first two are Core RationalIntervals.</td></tr>
+<tr><td><code>modulus(z, bits)</code></td><td>|z| as a RationalInterval; also for a rectangle or disc.</td></tr>
+<tr><td><code>argument(z, bits)</code></td><td>The principal argument in (−π, π] as a RationalInterval.</td></tr>
+<tr><td><code>arg(z, options)</code></td><td>The argument as a <code>Branched</code> result, for inputs that may lie across the negative real axis.</td></tr>
+<tr><td><code>exactTurn(z)</code></td><td>The angle as a fraction of a full turn when that is rational (a multiple of 1/8), else null.</td></tr>
+<tr><td><code>fromPolar(r, theta, bits)</code></td><td>A Rect around <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><msup><mi>e</mi><mrow><mi>i</mi><mi>θ</mi></mrow></msup></mrow><annotation encoding="application/x-tex">re^{i\theta}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8491em;"></span><span class="mord mathnormal" style="margin-right:0.0278em;">r</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mord mathnormal mtight" style="margin-right:0.0278em;">θ</span></span></span></span></span></span></span></span></span></span></span></span>. <code>theta</code> in radians, or <code>{ turns: q }</code>.</td></tr>
+<tr><td><code>rootsOfUnity(n, bits)</code></td><td>The n-th roots of unity, counter-clockwise from 1; the rational ones exact.</td></tr>
+<tr><td><code>roots(z, n, bits)</code></td><td>All n values of the n-th root of an exact z.</td></tr>
+</table></div>
+<h2>Functions</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>exp sin cos tan sinh cosh tanh</code></td><td><code>f(z, bits)</code> or <code>f(z, { bits })</code> returns a Rect. z is exact, a Rect or a Disc. <code>tan</code> and <code>tanh</code> refuse an enclosure that may contain a pole.</td></tr>
+<tr><td><code>log(z, options)</code></td><td>A <code>Branched</code>. Cut: the negative real axis. Options <code>{ bits, branch: k, side: "above" | "below" }</code>; branch k adds 2πik.</td></tr>
+<tr><td><code>sqrt(z, options), root(z, n, options)</code></td><td>A <code>Branched</code>; exact when the square root is a complex rational. Branch k multiplies by <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>e</mi><mrow><mn>2</mn><mi>π</mi><mi>i</mi><mi>k</mi><mi mathvariant="normal">/</mi><mi>n</mi></mrow></msup></mrow><annotation encoding="application/x-tex">e^{2\pi ik/n}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.888em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.888em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span><span class="mord mathnormal mtight" style="margin-right:0.0359em;">π</span><span class="mord mathnormal mtight" style="margin-right:0.0315em;">ik</span><span class="mord mtight">/</span><span class="mord mathnormal mtight">n</span></span></span></span></span></span></span></span></span></span></span></span>.</td></tr>
+<tr><td><code>pow(z, w, options)</code></td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>z</mi><mi>w</mi></msup></mrow><annotation encoding="application/x-tex">z^w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6644em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.044em;">z</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6644em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.0269em;">w</span></span></span></span></span></span></span></span></span></span></span>. Exact for a whole-number w and exact z; a rational w goes through <code>root</code>; otherwise <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>e</mi><mrow><mi>w</mi><mi>log</mi><mo>⁡</mo><mi>z</mi></mrow></msup></mrow><annotation encoding="application/x-tex">e^{w\log z}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8491em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.0269em;">w</span><span class="mspace mtight" style="margin-right:0.1952em;"></span><span class="mop mtight"><span class="mtight">l</span><span class="mtight">o</span><span class="mtight" style="margin-right:0.0139em;">g</span></span><span class="mspace mtight" style="margin-right:0.1952em;"></span><span class="mord mathnormal mtight" style="margin-right:0.044em;">z</span></span></span></span></span></span></span></span></span></span></span></span>.</td></tr>
+<tr><td><code>asin acos atanh</code></td><td><code>Branched</code>; cut on the real axis outside [−1, 1]; sides above, below.</td></tr>
+<tr><td><code>atan asinh</code></td><td><code>Branched</code>; cut on the imaginary axis outside [−i, i]; sides right, left.</td></tr>
+<tr><td><code>acosh</code></td><td><code>Branched</code>; cut on the real axis left of 1; sides above, below.</td></tr>
+<tr><td><code>Branched</code></td><td><code>value</code> (Rect or null), <code>straddles</code>, <code>cut</code>, <code>candidates</code> ([{ side, value }]), <code>convention</code> ({ side, value } for an exact point on the cut, else null), <code>branch</code>; getters <code>rect</code> (throws on the cut) and <code>hull</code>.</td></tr>
+<tr><td><code>continueAlong(fn, path, options)</code></td><td>Carry <code>"log"</code>, <code>{ root: n }</code> or <code>{ pow: w }</code> along a polygonal path of exact points: <code>{ value, turns, branch, values }</code>. Options <code>bits</code>, <code>branch</code>, <code>about</code>.</td></tr>
+<tr><td><code>winding(path, w)</code></td><td>The winding number of a closed polygon about w (default 0), exact.</td></tr>
+<tr><td><code>refined(name, z, options)</code></td><td>A Core <code>Refinement</code>: <code>.quick</code> at once, <code>.exact()</code> certified.</td></tr>
+<tr><td><code>plan</code></td><td>The phases still to come.</td></tr>
+</table></div>
+<h2>@ratmath/complex/cayley: the algebras</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>quaternions, octonions, sedenions</code></td><td>The algebras of dimension 4, 8 and 16 over the rationals.</td></tr>
+<tr><td><code>cayleyDickson(level, field)</code></td><td>The algebra of dimension <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>2</mn><mtext>level</mtext></msup></mrow><annotation encoding="application/x-tex">2^{\text{level}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8491em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">level</span></span></span></span></span></span></span></span></span></span></span></span></span> (level 0 to 8) over a field object, the rationals by default.</td></tr>
+<tr><td><code>CayleyDickson</code></td><td><code>level dim name labels field zero one units</code>; <code>basis(i)</code>, <code>of(...coefficients)</code>, <code>parse(text)</code>, <code>properties()</code> → <code>{ commutative, associative, alternative, flexible, composition, zeroDivisors }</code>.</td></tr>
+<tr><td><code>quaternion(w, x, y, z), octonion(...c)</code></td><td>Elements from coordinates or text (<code>"1 + 2i - k"</code>, <code>"e1 + 2 e7"</code>).</td></tr>
+<tr><td><code>Hyper</code></td><td>An element: <code>.coeffs</code>, <code>.algebra</code>, <code>.real</code>, <code>.imaginary</code>; <code>add sub mul neg scale conj norm inv pow rightDivide leftDivide commutator associator equals isZero</code>.</td></tr>
+<tr><td><code>QQ</code></td><td>The rationals as a field object.</td></tr>
+</table></div>
+<h2>@ratmath/complex/cayley: rotations</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>rotate(q, v)</code></td><td>The vector part of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mi>v</mi><msup><mi>q</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">qvq^{-1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.0085em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">q</span><span class="mord mathnormal" style="margin-right:0.0359em;">v</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">q</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">1</span></span></span></span></span></span></span></span></span></span></span></span>, as three Rationals.</td></tr>
+<tr><td><code>rotationMatrix(q)</code></td><td>The 3×3 rotation matrix as rows of Rationals. q need not have norm 1.</td></tr>
+<tr><td><code>fromRotationMatrix(M)</code></td><td>The primitive quaternion of a rational rotation matrix; refuses a matrix that is not a rotation.</td></tr>
+<tr><td><code>fromAxis(axis, t)</code></td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>+</mo><mi>t</mi><mo>⋅</mo></mrow><annotation encoding="application/x-tex">1 + t\cdot</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6151em;"></span><span class="mord mathnormal">t</span><span class="mord">⋅</span></span></span></span>axis: for a unit axis, t is the tangent of half the angle.</td></tr>
+<tr><td><code>rotationOf(q)</code></td><td><code>{ axis, cos, tanHalfSquared }</code>, exact.</td></tr>
+<tr><td><code>primitive(q)</code></td><td>The same rotation with whole-number coordinates sharing no factor, the first nonzero one positive.</td></tr>
+<tr><td><code>interpolate(q0, q1, t)</code></td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mi>q</mi><mn>0</mn></msub><mo>+</mo><mi>t</mi><msub><mi>q</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">(1 - t)q_0 + tq_1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.8095em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">t</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> the shorter way round: an exact rotation on the arc between them.</td></tr>
+</table></div>
+<h2>@ratmath/complex/cayley: integer quaternions</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>hurwitz(a, b, c, d)</code></td><td>A <code>Hurwitz</code> from coordinates that are all whole numbers or all halves of odd numbers, or from a quaternion.</td></tr>
+<tr><td><code>Hurwitz</code></td><td><code>add sub mul neg conj equals isZero</code>; <code>norm()</code> (BigInt); <code>divmod(b)</code> → <code>{ quotient, remainder }</code> with this = quotient·b + remainder; <code>isLipschitz</code>, <code>toIntegers()</code>, <code>toQuaternion()</code>. The constructor takes doubled coordinates.</td></tr>
+<tr><td><code>hurwitzUnits()</code></td><td>The 24 units.</td></tr>
+<tr><td><code>hurwitzGcd(a, b)</code></td><td>A right greatest common divisor.</td></tr>
+<tr><td><code>quaternionOfNorm(p)</code></td><td>A Lipschitz quaternion of norm p, for a prime p.</td></tr>
+<tr><td><code>fourSquares(n)</code></td><td>Four BigInts, largest first, whose squares add to n.</td></tr>
+<tr><td><code>fourSquaresCount(n)</code></td><td>The number of ordered, signed representations of n as four squares (Jacobi).</td></tr>
 </table></div>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/complex</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
-  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// The one export so far.
-for (const p of plan) PRINT(`phase ${p.phase}:`, p.contents, `(${p.estimate} lines)`);
-plan.length</textarea>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// One of each.
+const z = complex("3 + 4i");
+PRINT("complex   ", z.toString(), " norm", z.norm().toString(), " sqrt", z.exactSqrt()[0].toString());
+PRINT("rect      ", rect("1 + i", "1/10").mul(rect("2 - i", "1/10")).toString());
+PRINT("disc      ", disc("1 + i", "1/10").inv().toString());
+PRINT("polar     ", polar(z).exactModulus.toString(), "at", argument(z, 30).low.toNumber().toFixed(8), "rad");
+PRINT("exp       ", exp(z, 80).toString(20));
+PRINT("log       ", log(z).toString());
+PRINT("log(-1)   ", log(-1).toString(6));
+PRINT("root      ", root("-8", 3, { branch: 1, side: "above" }).toString(6), " (the real cube root of -8 is branch 1)");
+PRINT("pow       ", pow("2", "1/2", 100).toString(25));
+PRINT("asin      ", asin("1/2 + i").toString());
+PRINT("continue  ", continueAlong("log", ["1", "i", "-1", "-i", "1"]).turns, "turn");
+PRINT("winding   ", winding(["1", "i", "-1", "-i"]));
+PRINT("quaternion", quaternion(1, 2, 3, 4).inv().toString());
+PRINT("rotate    ", rotate("1 + i + j + k", [1, 2, 3]).join(", "));
+PRINT("hurwitz   ", hurwitz(7, 3, -2, 5).divmod(hurwitz(2, 1, 1, 0)).remainder.toString());
+PRINT("4 squares ", fourSquares(2026).join(", "));
+Object.keys(octonions.properties())</textarea>
   <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
   <div class="runbox-out" aria-live="polite"></div>
 </section>
