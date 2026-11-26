@@ -1,8 +1,8 @@
 // Shared page furniture for the complex docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./complex.js?v=4173def1a7";
-import { mountRunboxes } from "./runbox.js?v=4173def1a7";
+import * as A from "./complex.js?v=a55dc3d36e";
+import { mountRunboxes } from "./runbox.js?v=a55dc3d36e";
 
 export { A };
 
@@ -16,6 +16,9 @@ export const PAGES = [
   { href: "polar.html", title: "Polar form", blurb: "Modulus and angle, what is exact about them, roots of unity" },
   { href: "functions.html", title: "Functions", blurb: "exp, sine, cosine and the hyperbolic functions at any precision" },
   { href: "branches.html", title: "Branches", blurb: "Logarithms, roots and inverses that report their cuts and follow paths" },
+  { group: "Maps of the sphere" },
+  { href: "mobius.html", title: "Möbius maps", blurb: "Three points to three, the cross-ratio, kinds of map, circles mapped exactly" },
+  { href: "riemann-sphere.html", title: "The Riemann sphere", blurb: "Stereographic projection, sphere rotations, conformal maps, data for pictures" },
   { group: "Hypercomplex numbers" },
   { href: "cayley-dickson.html", title: "Cayley–Dickson numbers", blurb: "Quaternions, octonions, sedenions, and the law each doubling loses" },
   { href: "rotations.html", title: "Rotations", blurb: "Quaternions as exact rotations of space, with no square roots" },

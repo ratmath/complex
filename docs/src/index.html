@@ -45,10 +45,12 @@ String(quaternion("1 + 2i").mul("j"));   // "j + 2k"
 rotate("1 + k", [1, 0, 0]).map(String);  // ["0", "1", "0"]: a quarter turn about z, exactly
 fourSquares(2026);                       // [23n, 23n, 22n, 22n]</code></pre>
 
-<h2>Three ideas</h2>
+<h2>Four ideas</h2>
 <p><strong>Exact where the answer is rational.</strong> Sums, products, quotients and whole-number powers of complex rationals are complex rationals, and they are computed as such. So is \(\sqrt{3 + 4i} = 2 + i\), and so is any rotation by a rational quaternion.</p>
 <p><strong>Enclosed where it is not.</strong> \(e^{1+i}\) is not rational, so the answer is a small rectangle with rational corners that is proven to contain it. Ask for more bits and the rectangle shrinks. An uncertain input (a rectangle or a disc) gives a rectangle containing every possible value. See <a href="enclosures.html">Rectangles and discs</a>.</p>
 <p><strong>Branch cuts are reported.</strong> \(\log\), roots, powers and the inverse trigonometric functions jump across a cut. When the input is on the cut, or an uncertain input lies across it, the result holds the value on each side and says so; a number is never returned from the wrong side by accident. See <a href="branches.html">Branches</a>.</p>
+
+<p><strong>Maps of the sphere are exact.</strong> A <a href="mobius.html">Möbius map</a> with complex rational coefficients sends rational points to rational points and circles to circles, exactly, and stereographic projection onto the <a href="riemann-sphere.html">Riemann sphere</a> is rational too.</p>
 
 <h2>What is planned</h2>
 <p>From the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex">library roadmap</a>. Sizes are rough estimates in lines of source.</p>
@@ -58,7 +60,7 @@ fourSquares(2026);                       // [23n, 23n, 22n, 22n]</code></pre>
 <tr><td>2</td><td>Cayley–Dickson numbers, quaternion rotations, integer quaternions</td><td>built</td></tr>
 <tr><td>3</td><td>Complex Taylor models; contour integrals; argument principle and zero isolation</td><td>2,200</td></tr>
 <tr><td>4</td><td>Residues, Laurent series, singularities, real integrals by residues</td><td>800</td></tr>
-<tr><td>5</td><td>Möbius and conformal maps; graphics hooks</td><td>600, plus 800 in graphics</td></tr>
+<tr><td>5</td><td>Möbius and conformal maps; graphics hooks</td><td>built (pictures: 800 in graphics)</td></tr>
 <tr><td>6</td><td>Complex gamma and zeta</td><td>700</td></tr>
 </table></div>
 <p>It builds on Core and on <a href="https://ratmath.com/analytic/">analytic</a>, whose certified real exp, log, sine, cosine and arctangent are the only transcendental ingredients.</p>

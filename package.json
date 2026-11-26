@@ -1,6 +1,6 @@
 {
   "name": "@ratmath/complex",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions",
   "type": "module",
   "main": "index.js",
