@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Riemann sphere · RatMath Complex</title>
+<meta name="description" content="Stereographic projection done exactly, rotations of the sphere, conformal maps of the disc and half-plane, the Joukowski map, and data for pictures.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Topic</div>
+<h1>The Riemann sphere and conformal maps</h1>
+<p class="lede">Stereographic projection wraps the plane round a sphere with the point at infinity at the top, and it is a rational map: a complex rational goes to a point of the sphere with rational coordinates. The standard conformal maps between the disc and the half-plane are Möbius maps, so they are exact too.</p>
+<pre><code>toSphere("3/4");                        // [24/25, 0, −7/25]
+fromSphere([0, 0, 1]);                  // infinity
+cayley();                               // z ↦ (z − i)/(z + i): upper half-plane onto the disc
+discAutomorphism("1/2", "3/5 + 4/5i");  // a self-map of the disc sending 1/2 to 0
+joukowski(2);                           // 5/4
+gridImage(cayley(), { re: [-1, 1], im: [0, 2], step: "1/2" });   // exact circles, for a picture</code></pre>
+
+<h2>Stereographic projection</h2>
+<p>Put the unit sphere with its equator on the unit circle and project from the north pole. The point z = x + iy goes to</p>
+\[ \Bigl(\frac{2x}{|z|^2 + 1},\ \frac{2y}{|z|^2 + 1},\ \frac{|z|^2 - 1}{|z|^2 + 1}\Bigr), \]
+<p>a point with rational coordinates whenever z is a complex rational, and ∞ goes to the pole. The inverse is \((X + iY)/(1 - Z)\). Circles on the sphere become circles or lines in the plane (lines are the circles through the pole), which is why Möbius maps send generalized circles to generalized circles. The chordal distance, the straight-line distance between the two points of the sphere, is exact too: squared, it is \(4|z - w|^2/((1 + |z|^2)(1 + |w|^2))\).</p>
+
+<h2>Rotations of the sphere</h2>
+<p>A Möbius map with matrix proportional to a unitary one, \(\begin{pmatrix} a &amp; b \\ -\bar b &amp; \bar a\end{pmatrix}\), turns the Riemann sphere rigidly. <code>isSphereRotation</code> tests this exactly, and such a map keeps every chordal distance. The group of these maps is SU(2) modulo ±1, the rotation group of space, which is the same fact as the <a href="rotations.html">quaternion rotations</a> seen from another side.</p>
+
+<h2>Conformal maps of standard regions</h2>
+<ul>
+<li><code>cayley()</code>: \(z \mapsto \tfrac{z - i}{z + i}\) maps the upper half-plane onto the unit disc and the real line onto the unit circle.</li>
+<li><code>halfPlaneToDisc(z0)</code>: \(z \mapsto \tfrac{z - z_0}{z - \bar z_0}\) does the same and sends a chosen point to 0.</li>
+<li><code>discAutomorphism(a, u)</code>: \(z \mapsto u\,\tfrac{z - a}{1 - \bar a z}\) with |a| &lt; 1 and |u| = 1. Every conformal map of the disc onto itself has this form, and with a rational unit u, such as (3 + 4i)/5, it is exact.</li>
+<li><code>joukowski(z)</code>: \(\tfrac12(z + 1/z)\) maps the outside of the unit disc onto the plane cut along [−1, 1], sending the circle |z| = r to an ellipse with semi-axes \(\tfrac12(r \pm 1/r)\). It is not a Möbius map, but it is still rational.</li>
+</ul>
+<p>Maps that need exp or log, such as a strip onto a half-plane, use the certified functions with their branches reported (see <a href="branches.html">Branches</a>). <code>regions</code> tests exactly whether a point is in the disc, the upper or right half-plane, or the first quadrant.</p>
+
+<h2>Hooks for pictures</h2>
+<p>Pictures are drawn by the graphics package, and this package supplies the data. <code>gridImage(T)</code> sends each line of a grid to its exact image circle under a Möbius map. <code>sampleGrid(f)</code> evaluates a Möbius map, or any function of two doubles, on a grid for domain colouring, and says <code>kind: "estimated"</code>.</p>
+
+<div class="tablewrap"><table class="ref">
+<tr><th>call</th><th>returns</th></tr>
+<tr><td>toSphere(z), fromSphere([X, Y, Z]), chordal2(z, w)</td><td>Exact rationals; a Complex or infinity</td></tr>
+<tr><td>cayley(), halfPlaneToDisc(z0), discAutomorphism(a, u)</td><td>Mobius maps</td></tr>
+<tr><td>joukowski(z), regions</td><td>A Complex; exact membership tests</td></tr>
+<tr><td>gridImage(T, { re, im, step }), sampleGrid(f, { re, im, width, height })</td><td>{ kind: "exact", lines }; { kind: "estimated", values }</td></tr>
+</table></div>
+<template data-runbox>
+for (const z of ["0", "1", "i", "3/4", "1/2 + 2/3i", infinity]) PRINT(`${String(z).padEnd(10)} → (${toSphere(z).map(String).join(", ")})`);
+PRINT("back again:", String(fromSphere(toSphere("1/2 + 2/3i"))));
+const R = mobius("3/5", "4/5i", "4/5i", "3/5");   // [[a, b], [−b̄, ā]] with a = 3/5, b = 4i/5
+PRINT(String(R), " a rotation of the sphere:", R.isSphereRotation);
+PRINT("chordal² between 0 and 1:", String(chordal2(0, 1)), " and between their images:", String(chordal2(R.apply(0), R.apply(1))));
+const C = cayley();
+PRINT("Cayley:", String(C), " i ↦", String(C.apply("i")), " 0 ↦", String(C.apply(0)), " ∞ ↦", String(C.apply(infinity)));
+const D = discAutomorphism("1/2", "3/5 + 4/5i");
+PRINT(String(D), " 1/2 ↦", String(D.apply("1/2")), " |D(3/5 + 4/5i)|² =", String(D.apply("3/5 + 4/5i").norm()));
+PRINT("Joukowski: 2 ↦", String(joukowski(2)), " i ↦", String(joukowski("i")));
+gridImage(C, { re: [-1, 1], im: [0, 1], step: "1/2" }).lines.map((l) =&gt; `${l.from} ↦ ${String(l.image)}`)
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

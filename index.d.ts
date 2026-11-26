@@ -10,7 +10,7 @@ export type ComplexLike = Complex | RationalLike | readonly [RationalLike, Ratio
 /** An exact number or an enclosure. */
 export type Enclosable = ComplexLike | Rect | Disc;
 
-export type ComplexErrorCode = "division-by-zero" | "branch-cut" | "branch-point" | "pole" | "precision" | "bad-option" | "no-quotient" | "not-a-rotation" | "too-large";
+export type ComplexErrorCode = "division-by-zero" | "branch-cut" | "branch-point" | "pole" | "precision" | "bad-option" | "no-quotient" | "not-a-rotation" | "too-large" | "bad-argument" | "degenerate";
 export class ComplexError extends Error {
   code: ComplexErrorCode;
   constructor(code: ComplexErrorCode, message: string);
@@ -208,11 +208,99 @@ export type FunctionName = "exp" | "sin" | "cos" | "tan" | "sinh" | "cosh" | "ta
 /** A function value as a Core Refinement: a quick preview, then the certified enclosure. */
 export function refined(name: FunctionName, z: Enclosable, opts?: BranchOptions): Refinement;
 
+// ---- Möbius maps, generalized circles, the Riemann sphere ----
+
+/** The point at infinity of the Riemann sphere. */
+export const infinity: { readonly infinity: true; toString(): string; toJSON(): string };
+export type Infinity = typeof infinity;
+/** A point of the Riemann sphere: a complex number or ∞. */
+export type SpherePoint = ComplexLike | Infinity;
+export function isInfinity(z: unknown): boolean;
+
+export type MobiusKind = "identity" | "elliptic" | "parabolic" | "hyperbolic" | "loxodromic";
+/** z ↦ (az + b)/(cz + d) with complex rational coefficients and ad − bc ≠ 0. Exact. */
+export class Mobius {
+  readonly a: Complex;
+  readonly b: Complex;
+  readonly c: Complex;
+  readonly d: Complex;
+  constructor(a: ComplexLike, b: ComplexLike, c: ComplexLike, d: ComplexLike);
+  readonly det: Complex;
+  readonly matrix: readonly [readonly [Complex, Complex], readonly [Complex, Complex]];
+  apply(z: SpherePoint): Complex | Infinity;
+  compose(o: Mobius): Mobius;
+  inverse(): Mobius;
+  /** Equal as maps (coefficients up to a common factor). */
+  equals(o: Mobius): boolean;
+  /** (a + d)²/(ad − bc), the invariant that classifies the map. */
+  readonly traceSquared: Complex;
+  readonly isIdentity: boolean;
+  classify(): MobiusKind;
+  fixedPoints(opts?: { bits?: number }): { exact: true; points: (Complex | Infinity)[] | "every point" } | { exact: false; points: Rect[] };
+  /** Is it a rotation of the Riemann sphere (unitary up to scale)? */
+  readonly isSphereRotation: boolean;
+  /** Estimated: the map on a pair of doubles, null at the pole. */
+  applyFloat(p: readonly [number, number]): [number, number] | null;
+  toString(): string;
+}
+export function mobius(a: ComplexLike, b: ComplexLike, c: ComplexLike, d: ComplexLike): Mobius;
+/** The unique Möbius map sending three distinct points to three distinct points. */
+export function mobiusFrom(from: readonly [SpherePoint, SpherePoint, SpherePoint], to: readonly [SpherePoint, SpherePoint, SpherePoint]): Mobius;
+export function crossRatio(z1: SpherePoint, z2: SpherePoint, z3: SpherePoint, z4: SpherePoint): Complex | Infinity;
+/** Do four points lie on one circle or line? Exact. */
+export function concyclic(z1: SpherePoint, z2: SpherePoint, z3: SpherePoint, z4: SpherePoint): boolean;
+
+/** A circle or line, as the Hermitian form A|z|² + B̄z + Bz̄ + C = 0 (A, C real). */
+export class GCircle {
+  readonly A: Rational;
+  readonly B: Complex;
+  readonly C: Rational;
+  constructor(A: RationalLike, B: ComplexLike, C: RationalLike);
+  readonly isLine: boolean;
+  readonly center: Complex | null;
+  readonly radius2: Rational | null;
+  value(z: ComplexLike): Rational;
+  contains(z: SpherePoint): boolean;
+  equals(o: GCircle): boolean;
+  /** The image under a Möbius map, exactly. */
+  map(T: Mobius): GCircle;
+  toString(): string;
+}
+export function circle(center: ComplexLike, radius2: RationalLike): GCircle;
+export function circleThrough(z1: ComplexLike, z2: ComplexLike, z3: ComplexLike): GCircle;
+export function lineThrough(z1: ComplexLike, z2: ComplexLike): GCircle;
+
+/** Stereographic projection to the unit sphere, exact. */
+export function toSphere(z: SpherePoint): [Rational, Rational, Rational];
+export function fromSphere(p: readonly [RationalLike, RationalLike, RationalLike]): Complex | Infinity;
+/** The squared chordal distance on the Riemann sphere. */
+export function chordal2(z: SpherePoint, w: SpherePoint): Rational;
+
+/** The Cayley map z ↦ (z − i)/(z + i), upper half-plane onto the disc. */
+export function cayley(): Mobius;
+export function discAutomorphism(a: ComplexLike, u?: ComplexLike): Mobius;
+export function halfPlaneToDisc(z0: ComplexLike): Mobius;
+export function joukowski(z: ComplexLike): Complex | Infinity;
+export const regions: {
+  readonly disc: (z: SpherePoint) => boolean;
+  readonly upperHalfPlane: (z: SpherePoint) => boolean;
+  readonly rightHalfPlane: (z: SpherePoint) => boolean;
+  readonly firstQuadrant: (z: SpherePoint) => boolean;
+};
+export interface GridRange { re?: readonly [RationalLike, RationalLike]; im?: readonly [RationalLike, RationalLike] }
+/** Exact: the image of a grid of lines, each a generalized circle. */
+export function gridImage(T: Mobius, opts?: GridRange & { step?: RationalLike }): { readonly kind: "exact"; readonly lines: readonly { from: string; image: GCircle }[] };
+/** Estimated: values of a map on a grid of doubles. */
+export function sampleGrid(
+  f: Mobius | ((p: [number, number]) => [number, number] | null),
+  opts?: { re?: readonly [number, number]; im?: readonly [number, number]; width?: number; height?: number },
+): { readonly kind: "estimated"; readonly width: number; readonly height: number; readonly re: [number, number]; readonly im: [number, number]; readonly values: Float64Array };
+
 export interface PlannedPhase {
   phase: number;
   contents: string;
   /** Rough size in source lines, as text ("1,200", or "600, plus 800 in graphics"). */
   estimate: string;
 }
-/** What is still planned: phases 3 to 6. */
+/** What is still planned: phases 3, 4 and 6. */
 export const plan: readonly PlannedPhase[];

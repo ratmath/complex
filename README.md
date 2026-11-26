@@ -44,6 +44,13 @@ fourSquares(2026);                        // [23n, 23n, 22n, 22n]
   `fromAxis`, `rotationOf`, `interpolate`, all exact.
 - **Integer quaternions** (`/cayley`): `hurwitz`, `divmod`, `hurwitzGcd`,
   `quaternionOfNorm`, `fourSquares`, `fourSquaresCount`.
+- **Möbius maps**: `mobius`, `Mobius` (compose, inverse, classify, fixed
+  points), `mobiusFrom` three points to three, `crossRatio`, `concyclic`;
+  circles and lines as exact Hermitian forms (`GCircle`, `circle`,
+  `circleThrough`, `lineThrough`) that a Möbius map sends to each other exactly.
+- **The Riemann sphere and conformal maps**: `toSphere`, `fromSphere`,
+  `chordal2`; `cayley`, `discAutomorphism`, `halfPlaneToDisc`, `joukowski`,
+  `regions`; picture data `gridImage` (exact) and `sampleGrid` (estimated).
 
 ## Planned
 
@@ -53,7 +60,6 @@ From the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/des
 |---|---|
 | 3 | Complex Taylor models; contour integrals; argument principle and zero isolation |
 | 4 | Residues, Laurent series, singularities, real integrals by residues |
-| 5 | Möbius and conformal maps; graphics hooks |
 | 6 | Complex gamma and zeta |
 
 It depends on Core and on analytic (certified real exp, log, sine, cosine and
