@@ -8,12 +8,13 @@
 <meta property="og:description" content="Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ratmath.com/complex/">
-<meta name="description" content="Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions.">
+<meta name="description" content="Complex and hypercomplex numbers for RatMath: exact complex rationals, rectangle and disc enclosures, functions that report their branches, quaternions and octonions.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=87e967ceab">
-<script type="module" src="assets/site.js?v=87e967ceab"></script>
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/style.css?v=4173def1a7">
+<script type="module" src="assets/site.js?v=4173def1a7"></script>
 </head>
 <body>
 <div class="shell">
@@ -21,52 +22,83 @@
 <main>
 <article>
 <div class="eyebrow">@ratmath/complex</div>
-<h1>Complex numbers, branches and contours, certified</h1>
-<p class="lede">Exact complex rationals, elementary functions that say which branch they took, and complex analysis with proofs: contour integrals, residues and zero counts enclosed in rectangles that are guaranteed to contain the truth. Quaternions and octonions live here too.</p>
-<p class="notice"><strong>Planned, not built yet.</strong> This site is the frame the package will grow into. The full plan is in the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex">library roadmap</a>, and the <a href="https://ratmath.com/shelf/">RatMath Shelf</a> page lists what exists across all the libraries.</p>
+<h1>Complex numbers that say which branch they took</h1>
+<p class="lede">Exact complex rationals, certified enclosures of everything that is not rational, and elementary functions that report what happens at a branch cut instead of silently picking a side. Quaternions, octonions and the rest of the doubling ladder are here too, exact.</p>
 
-<h2>What it will cover</h2>
-<ul>
-  <li>Exact complex rationals, rectangles and discs as enclosures, polar form.</li>
-  <li>Elementary functions (exp, log, powers, roots, trigonometric) that report the branch used and when a cut is crossed.</li>
-  <li>Quaternions and octonions by the Cayley–Dickson construction, rotations, integer quaternions.</li>
-  <li>Complex Taylor models, contour integrals, the argument principle and isolation of zeros.</li>
-  <li>Residues, Laurent series, classification of singularities, real integrals by residues.</li>
-  <li>Möbius and conformal maps, with pictures through graphics.</li>
-  <li>The complex gamma and zeta functions.</li>
-</ul>
+<h2>What is here</h2>
+<p>The first two parts of the package: complex numbers with their functions, and the Cayley–Dickson numbers. Contour integrals, residues, conformal maps and the gamma and zeta functions are planned and listed at the bottom of this page.</p>
+<div class="cards" id="cards"></div>
 
-<h2>The order of work</h2>
-<p>The phases below come from the roadmap. Sizes are rough estimates in lines of source.</p>
+<h2>A first program</h2>
+<pre><code>import { complex, exp, log, sqrt, polar } from "@ratmath/complex";
+
+String(complex("(1 + 2i)/(3 - i)"));     // "1/10 + 7/10i", exactly
+String(complex("(1 + i)^8"));            // "16"
+String(sqrt("3 + 4i"));                  // "2 + i": exact when the root is rational
+
+String(exp("1 + i"));                    // "1.4686939399 + 2.2873552872i ± 1.7e-21"
+String(exp("1 + i", 200).toString(40));  // forty digits, still certified
+
+String(log("-1"));
+// on the cut (the negative real axis).  above: 0 + 3.1415926536i ± 1.7e-21;
+// below: 0 - 3.1415926536i ± 1.7e-21.  Convention: above
+String(log("-1", { side: "below" }));    // "0 - 3.1415926536i ± 1.7e-21"</code></pre>
+<p>Numbers are written as text (<code>"3 - 4i"</code>, <code>"1/2 + 0.#3i"</code>), as a pair <code>complex(3, -4)</code>, or as anything Core reads. The quaternions and their relatives are a separate entry point, so a program that only wants complex numbers does not load them:</p>
+<pre><code>import { quaternion, rotate, fourSquares } from "@ratmath/complex/cayley";
+
+String(quaternion("1 + 2i").mul("j"));   // "j + 2k"
+rotate("1 + k", [1, 0, 0]).map(String);  // ["0", "1", "0"]: a quarter turn about z, exactly
+fourSquares(2026);                       // [23n, 23n, 22n, 22n]</code></pre>
+
+<h2>Three ideas</h2>
+<p><strong>Exact where the answer is rational.</strong> Sums, products, quotients and whole-number powers of complex rationals are complex rationals, and they are computed as such. So is <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msqrt><mrow><mn>3</mn><mo>+</mo><mn>4</mn><mi>i</mi></mrow></msqrt><mo>=</mo><mn>2</mn><mo>+</mo><mi>i</mi></mrow><annotation encoding="application/x-tex">\sqrt{3 + 4i} = 2 + i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.04em;vertical-align:-0.1669em;"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8731em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;"><span class="mord">3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord">4</span><span class="mord mathnormal">i</span></span></span><span style="top:-2.8331em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1669em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6595em;"></span><span class="mord mathnormal">i</span></span></span></span>, and so is any rotation by a rational quaternion.</p>
+<p><strong>Enclosed where it is not.</strong> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>e</mi><mrow><mn>1</mn><mo>+</mo><mi>i</mi></mrow></msup></mrow><annotation encoding="application/x-tex">e^{1+i}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8247em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8247em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mbin mtight">+</span><span class="mord mathnormal mtight">i</span></span></span></span></span></span></span></span></span></span></span></span> is not rational, so the answer is a small rectangle with rational corners that is proven to contain it. Ask for more bits and the rectangle shrinks. An uncertain input (a rectangle or a disc) gives a rectangle containing every possible value. See <a href="enclosures.html">Rectangles and discs</a>.</p>
+<p><strong>Branch cuts are reported.</strong> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>log</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\log</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mop">lo<span style="margin-right:0.0139em;">g</span></span></span></span></span>, roots, powers and the inverse trigonometric functions jump across a cut. When the input is on the cut, or an uncertain input lies across it, the result holds the value on each side and says so; a number is never returned from the wrong side by accident. See <a href="branches.html">Branches</a>.</p>
+
+<h2>What is planned</h2>
+<p>From the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex">library roadmap</a>. Sizes are rough estimates in lines of source.</p>
 <div class="tablewrap"><table class="plan">
 <tr><th>Phase</th><th>Contents</th><th>Estimate</th></tr>
-<tr><td>1</td><td>Exact complex rationals, rectangles and discs, polar form, elementary functions with branch reporting</td><td>1,400</td></tr>
-<tr><td>2</td><td>Cayley–Dickson numbers, quaternion rotations, integer quaternions</td><td>700</td></tr>
+<tr><td>1</td><td>Exact complex rationals, rectangles and discs, polar form, elementary functions with branch reporting</td><td>built</td></tr>
+<tr><td>2</td><td>Cayley–Dickson numbers, quaternion rotations, integer quaternions</td><td>built</td></tr>
 <tr><td>3</td><td>Complex Taylor models; contour integrals; argument principle and zero isolation</td><td>2,200</td></tr>
 <tr><td>4</td><td>Residues, Laurent series, singularities, real integrals by residues</td><td>800</td></tr>
 <tr><td>5</td><td>Möbius and conformal maps; graphics hooks</td><td>600, plus 800 in graphics</td></tr>
 <tr><td>6</td><td>Complex gamma and zeta</td><td>700</td></tr>
 </table></div>
-<p>It will build on: Core and analytic (real enclosures of exp, sin, atan and the constants), and optionally algebraic for conversions.</p>
-
-<h2>How the docs will be laid out</h2>
-<p>Like every library on the Shelf: this overview, an <a href="explore.html">Explore</a> page for trying things without writing code, a <a href="reference.html">Reference</a> listing every function, and one page per topic that explains the usage and the mathematics. Every page ends with a box of code you can edit and run.</p>
-<div class="cards" id="cards"></div>
-
-<h2>Until then</h2>
-<p>The box below already runs, with <code>@ratmath/core</code> in scope. It shows the kind of exactness the package is built on, done by hand.</p>
+<p>It builds on Core and on <a href="https://ratmath.com/analytic/">analytic</a>, whose certified real exp, log, sine, cosine and arctangent are the only transcendental ingredients.</p>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/complex</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
-  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// Complex arithmetic on pairs of exact fractions, by hand for now.
-const C = (re, im) =&gt; ({ re: new Rational(re), im: new Rational(im) });
-const mul = (a, b) =&gt; ({ re: a.re.multiply(b.re).subtract(a.im.multiply(b.im)), im: a.re.multiply(b.im).add(a.im.multiply(b.re)) });
-const show = (z) =&gt; `${z.re} + ${z.im}i`;
-// (3/5 + 4/5 i) lies on the unit circle, so its powers do too: exactly.
-const z = { re: new Rational(3, 5), im: new Rational(4, 5) };
-let w = C(1, 0);
-for (let k = 1; k &lt;= 5; k += 1) {
-  w = mul(w, z);
-  PRINT(`z^${k} =`, show(w), "  |z|² =", w.re.pow(2).add(w.im.pow(2)).toString());
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// Euler's identity, as far as it can be known: exp(iπ) with π enclosed.
+const pi = [new Rational("3.14159265358979"), new Rational("3.14159265358980")];
+PRINT("exp(i·[π]) =", exp(rect([0, 0], pi)).toString());
+
+// (3 + 4i)/5 is on the unit circle, so every power of it is too, exactly.
+const z = complex("3/5 + 4/5i");
+PRINT("z^10 =", z.pow(10).toString(), "  |z^10|² =", z.pow(10).norm().toString());
+
+// A function on its cut tells you so.
+PRINT("sqrt(-4)  →", sqrt("-4").toString());
+PRINT("asin(2)   →", asin("2").toString());
+
+// i^i is real
+PRINT("i^i =", pow("i", "i").toString());
+
+// The doubling ladder: what each level gives up
+for (const level of [1, 2, 3, 4]) {
+  const p = cayleyDickson(level).properties();
+  PRINT(p.name.padEnd(16), "commutative:", p.commutative, " associative:", p.associative, " zero divisors:", p.zeroDivisors ? p.zeroDivisors.join(" times ") + " = 0" : "none");
 }
 plan.map((p) =&gt; `${p.phase}. ${p.contents}`)</textarea>
   <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
@@ -77,7 +109,7 @@ plan.map((p) =&gt; `${p.phase}. ${p.contents}`)</textarea>
 </main>
 </div>
 <script type="module">
-import { topicCards } from "./assets/site.js?v=87e967ceab";
+import { topicCards } from "./assets/site.js?v=4173def1a7";
 topicCards(document.getElementById("cards"));
 </script>
 </body>

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cayley–Dickson numbers · RatMath Complex</title>
+<meta name="description" content="Quaternions, octonions, sedenions and beyond by the Cayley–Dickson doubling construction in @ratmath/complex/cayley, exact, with the law each level loses.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Cayley–Dickson numbers</div>
+<h1>Quaternions, octonions and the doubling ladder</h1>
+<p class="lede">One construction builds the complex numbers from the reals, the quaternions from the complex numbers, the octonions from the quaternions, and keeps going. Each step doubles the dimension and gives up one law of arithmetic. Everything here is exact.</p>
+
+<h2>The construction</h2>
+<p>A number of the next level is a pair \((a, b)\) of numbers of this one, with</p>
+\[ (a, b)(c, d) = (ac - \bar d b,\ da + b\bar c) \qquad \overline{(a, b)} = (\bar a, -b). \]
+<p>Starting from the reals, where \(\bar a = a\), the pairs are the complex numbers with \(i = (0, 1)\). Pairs of those are the quaternions, with \(j = (0, 1)\) and \(k = (0, i)\). Then come the octonions (dimension 8), the sedenions (16), and so on without end.</p>
+<pre><code>import { quaternions, octonions, sedenions, cayleyDickson, quaternion, octonion } from "@ratmath/complex/cayley";
+
+const [one, i, j, k] = quaternions.units;
+String(i.mul(j));              // "k"
+String(j.mul(i));              // "-k": order matters
+String(i.mul(j).mul(k));       // "-1": Hamilton's i j k = −1
+
+const q = quaternion(1, 2, 3, 4);        // or quaternion("1 + 2i + 3j + 4k")
+String(q.norm());              // "30"
+String(q.conj());              // "1 - 2i - 3j - 4k"
+String(q.inv());               // "1/30 - 1/15i - 1/10j - 2/15k"
+String(q.mul("i"));            // "-2 + i + 4j - 3k"
+String(quaternion("i").mul(q));// "-2 + i - 4j + 3k"
+
+String(octonion("e1 + 2 e7").mul(octonion("1 - e3")));   // "e1 + e2 - 2 e4 + 2 e7"
+cayleyDickson(5).dim;          // 32; levels 0 to 8 are available</code></pre>
+<p>Elements are immutable, with coordinates in <code>.coeffs</code> on the basis \(1, e_1, e_2, \dots\) (written \(1, i, j, k\) for the quaternions). The methods are <code>add sub mul neg scale conj norm inv pow rightDivide leftDivide commutator associator equals</code>. Arguments may be elements, numbers, coefficient lists or text.</p>
+
+<h2>What each level loses</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Level</th><th>Name</th><th>Dimension</th><th>Loses</th><th>Still has</th></tr>
+<tr><td>0</td><td>real numbers</td><td>1</td><td></td><td>order, and everything below</td></tr>
+<tr><td>1</td><td>complex numbers</td><td>2</td><td>order; \(\bar z = z\)</td><td>commutative, associative</td></tr>
+<tr><td>2</td><td>quaternions</td><td>4</td><td>commutativity</td><td>associative: a division ring</td></tr>
+<tr><td>3</td><td>octonions</td><td>8</td><td>associativity</td><td>alternative, \(N(xy) = N(x)N(y)\), division</td></tr>
+<tr><td>4</td><td>sedenions</td><td>16</td><td>alternativity, the norm law, division</td><td>flexible, power-associative, inverses</td></tr>
+</table></div>
+<p><code>algebra.properties()</code> finds these by exact computation instead of quoting them, and for the sedenions and beyond it returns an actual pair of zero divisors:</p>
+<pre><code>octonions.properties();
+// { name: "octonions", dimension: 8, commutative: false, associative: false,
+//   alternative: true, flexible: true, composition: true, zeroDivisors: null }
+
+const [a, b] = sedenions.properties().zeroDivisors;
+String(a);  String(b);         // "e1 + e10", "e4 - e15"
+String(a.mul(b));              // "0", though neither factor is 0</code></pre>
+<p><em>Alternative</em> means \((xx)y = x(xy)\) and \((yx)x = y(xx)\): any two elements generate an associative algebra, even though three do not. <em>Flexible</em> means \((xy)x = x(yx)\). <em>Power-associative</em> means \(x^n\) does not depend on how it is bracketed, which is why <code>pow</code> works at every level.</p>
+
+<h2>Norm and inverse</h2>
+<p>At every level \(x\bar x = \bar x x = N(x)\), the sum of the squares of the coordinates, so \(x^{-1} = \bar x / N(x)\) is a two-sided inverse of any nonzero \(x\). What changes is what an inverse is good for. Up to the octonions \(N(xy) = N(x)N(y)\), which makes \(xy = 0\) impossible unless a factor is 0, and \(x = ab^{-1}\) solves \(xb = a\). In the sedenions the norm law fails, zero divisors appear, and \(xb = a\) may have no solution or many; <code>rightDivide</code> and <code>leftDivide</code> check their answer there and refuse (code <code>no-quotient</code>) when it does not hold.</p>
+<p>The norm law is a statement about sums of squares. For the complex numbers it is the two-square identity of Diophantus, for the quaternions Euler's four-square identity, for the octonions Degen's eight-square identity. Hurwitz proved in 1898 that there are no others: an identity of this kind exists only for 1, 2, 4 and 8 squares. The ladder goes on, but the good behaviour stops at the octonions.</p>
+
+<h2>Commutators and associators</h2>
+<p>\([x, y] = xy - yx\) measures the failure of commutativity and \([x, y, z] = (xy)z - x(yz)\) the failure of associativity.</p>
+<pre><code>const O = octonions;
+String(O.basis(1).mul(O.basis(2)).mul(O.basis(4)));         // "e7"
+String(O.basis(1).mul(O.basis(2).mul(O.basis(4))));         // "-e7"
+String(O.basis(1).associator(O.basis(2), O.basis(4)));      // "2 e7"</code></pre>
+
+<h2>Other fields</h2>
+<p><code>cayleyDickson(level, field)</code> builds the algebra over any RatMath field object. Over <code>CQ</code> from the main entry point the level-2 algebra is the biquaternions (quaternions with complex coefficients), which do have zero divisors: \((1 + ii')(1 - ii') = 0\) where \(i'\) is the scalar one.</p>
+<template data-runbox>
+// The ladder, computed.
+for (let level = 0; level &lt;= 5; level++) {
+  const p = cayleyDickson(level).properties();
+  PRINT(`${String(p.dimension).padStart(2)}  ${p.name.padEnd(38)}`,
+    [p.commutative &amp;&amp; "commutative", p.associative &amp;&amp; "associative", p.alternative &amp;&amp; "alternative", p.flexible &amp;&amp; "flexible"].filter(Boolean).join(", ") || "none of these");
+}
+
+// Euler's four-square identity is the norm law for quaternions.
+const p = quaternion(1, 2, 3, 4), q = quaternion(2, -1, 0, 5);
+PRINT("(1² + 2² + 3² + 4²)(2² + 1² + 0² + 5²) =", p.norm().multiply(q.norm()).toString());
+PRINT("p·q =", p.mul(q).toString(), "  whose squares add to", p.mul(q).norm().toString());
+
+// In the sedenions it fails, and with it division.
+const [a, b] = sedenions.properties().zeroDivisors;
+PRINT(`(${a})·(${b}) =`, a.mul(b).toString(), "  norms:", a.norm().toString(), "and", b.norm().toString());
+
+// Octonions: not associative, but any two elements associate.
+const x = octonion(1, 2, 0, -1, 3, 0, 1, 1), y = octonion(0, 1, 1, 0, -2, 1, 0, 3), z = octonion("e3 + e5");
+PRINT("(xy)z − x(yz) =", x.associator(y, z).toString());
+PRINT("(xx)y − x(xy) =", x.associator(x, y).toString(), "   (xy)x − x(yx) =", x.associator(y, x).toString());
+
+// Biquaternions have zero divisors
+const HC = cayleyDickson(2, CQ);
+HC.of(1, "i").mul(HC.of(1, "-i")).toString()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

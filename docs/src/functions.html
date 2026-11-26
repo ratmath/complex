@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Functions · RatMath Complex</title>
+<meta name="description" content="Certified complex exp, sin, cos, tan and the hyperbolic functions in @ratmath/complex, at any precision, on points and on enclosures.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Functions</div>
+<h1>Elementary functions</h1>
+<p class="lede">\(e^z\), the trigonometric and the hyperbolic functions of a complex number, enclosed in a rectangle at whatever precision you ask for. These are single-valued. The ones with branch cuts (logarithm, roots, powers, inverses) are on the <a href="branches.html">next page</a>.</p>
+
+<h2>Calling them</h2>
+<pre><code>import { exp, sin, cos, tan, sinh, cosh, tanh, rect } from "@ratmath/complex";
+
+String(exp("1 + i"));        // "1.4686939399 + 2.2873552872i ± 1.7e-21"
+String(sin("1 + i"));        // "1.29845758142 + 0.63496391478i ± 8.5e-22"
+String(cos("i"));            // "1.54308063482 + 0i ± 8.5e-22": cosh(1), and the imaginary part encloses 0
+String(tan("1 + i"));        // "0.27175258532 + 1.08392332734i ± 8.5e-22"
+
+exp("1 + i", 200);           // the second argument is the precision in bits (default 64)
+exp("1 + i", { bits: 200 }); // or an options object
+sin(rect("1 + i", "1/100")); // an enclosure in, an enclosure of every value out</code></pre>
+<p>The result is a <code>Rect</code>. For an exact input its size is about \(2^{-\text{bits}}\) relative to the value (the work is done with guard bits and rounded outward at the end). For an input that is itself an enclosure, the size is whatever the input's width forces.</p>
+
+<h2>How they are computed</h2>
+<p>Each one separates into real functions of the real and imaginary parts, which <a href="https://ratmath.com/analytic/">analytic</a> encloses rigorously:</p>
+\[ e^{x+iy} = e^x\cos y + i\,e^x\sin y \]
+\[ \sin(x+iy) = \sin x\cosh y + i\cos x\sinh y \qquad \cos(x+iy) = \cos x\cosh y - i\sin x\sinh y \]
+<p>The hyperbolic functions are the same ones turned a quarter of the way round: \(\sinh z = -i\sin(iz)\) and \(\cosh z = \cos(iz)\). The tangents are quotients, \(\tan z = \sin z/\cos z\), and refuse with code <code>pole</code> when the enclosure of the denominator contains 0, which is how you learn that an input rectangle may contain a pole.</p>
+<p>Because the real intervals for \(x\) and \(y\) are independent, a rectangle is the natural shape here: the enclosure of \(e^z\) over a rectangle is the product of an interval for \(e^x\) with intervals for \(\cos y\) and \(\sin y\), with no wasted room beyond what a rectangle around a curved image must have.</p>
+
+<h2>What "certified" means here</h2>
+<p>The true value is inside the rectangle returned. Always, not with high probability. That lets the output prove things: if two enclosures do not intersect, the numbers are different; if the enclosure of \(f(z)\) excludes 0, then \(f\) has no zero at \(z\) (or anywhere in an input rectangle). It cannot prove equality, since a rectangle that contains 0 says only "possibly zero"; for that see the exact layer in <a href="numbers.html">Complex rationals</a> or the equality tests in <a href="https://ratmath.com/symbolic/">symbolic</a>.</p>
+
+<h2>Quick first, exact after</h2>
+<p><code>refined(name, z, { bits })</code> wraps any function as a Core <code>Refinement</code>: a fast low-precision value at once (<code>.quick</code>), and the certified one when asked (<code>.exact()</code>). An interface can show the quick value while a slider moves and sharpen it when the slider stops.</p>
+<pre><code>import { refined } from "@ratmath/complex";
+
+const r = refined("exp", "1 + i", { bits: 300 });
+r.quick.value;    // [1.4686939399158851, 2.2873552871788423] as doubles
+r.quick.trust;    // "good" ("unsure" when the input is on a branch cut)
+r.exact();        // the Rect at 300 bits</code></pre><template data-runbox>
+// One value at rising precision: the rectangles are nested.
+let previous = null;
+for (const bits of [20, 60, 120, 240]) {
+  const v = exp("1 + i", bits);
+  PRINT(`${String(bits).padStart(3)} bits:`, v.toString(Math.floor(bits / 3.4)), previous ? `  inside the last: ${previous.contains(v)}` : "");
+  previous = v;
+}
+
+// sin² + cos² = 1 holds as an enclosure at a complex point
+const z = complex("2 - 3i");
+const one = sin(z).pow(2).add(cos(z).pow(2));
+PRINT("sin² + cos² at", z.toString(), "=", one.toString(), " contains 1:", one.contains(1));
+
+// Euler's formula
+PRINT("exp(iz)       =", exp(z.mul("i")).toString());
+PRINT("cos z + i sin z =", cos(z).add(sin(z).timesI()).toString());
+
+// Proving a function has no zero in a region: cos has none in this square.
+const box = rect("1/2 + i", "1/4");
+PRINT("cos over the box:", cos(box).toString(), " may be zero:", cos(box).containsZero());
+
+// A rectangle that may contain a pole of tan is refused.
+try { tan(rect([1, 2], [-1, 1])); } catch (e) { PRINT(e.code + ":", e.message); }
+tan(rect("1 + i", "1/10")).toString()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Complex Reference</title>
-<meta name="description" content="Every function of @ratmath/complex.">
+<title>Reference · RatMath Complex</title>
+<meta name="description" content="Every export of @ratmath/complex and @ratmath/complex/cayley.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
@@ -18,16 +18,103 @@
 <article>
 <div class="eyebrow">Reference</div>
 <h1>Everything in the library</h1>
-<p class="lede">Every export of <code>@ratmath/complex</code> will be listed here with what it takes and what it returns.</p>
-<p class="notice"><strong>Planned, not built yet.</strong> This site is the frame the package will grow into. The full plan is in the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex">library roadmap</a>, and the <a href="https://ratmath.com/shelf/">RatMath Shelf</a> page lists what exists across all the libraries.</p>
-<div class="tablewrap"><table class="ref" id="ref">
+<p class="lede">Every export of <code>@ratmath/complex</code> and of <code>@ratmath/complex/cayley</code>. Anything called <code>z</code> below is a <code>Complex</code>, text, a pair or a real number, and for the functions also a <code>Rect</code> or a <code>Disc</code>. <code>bits</code> is the precision in binary digits and defaults to 64.</p>
+<h2>Complex rationals</h2>
+<div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
-<tr><td>plan</td><td>The list of planned phases, each { phase, contents, estimate }. It is here so the package has something to load while it is empty, and it shrinks as phases are built.</td></tr>
+<tr><td><code>complex(re, im)</code></td><td>A <code>Complex</code> from text (<code>"3 - 4i"</code>, <code>"(1 + i)^8"</code>), two parts, a <code>[re, im]</code> pair or a real number in any form Core reads.</td></tr>
+<tr><td><code>Complex</code></td><td><code>.re</code>, <code>.im</code> (Core Rationals); <code>add sub mul div neg conj inv pow(n) scale(q)</code>; <code>norm()</code> = |z|²; <code>exactModulus()</code> and <code>exactSqrt()</code> (null when irrational); <code>equals isZero isReal isImaginary isGaussianInteger</code>; <code>toString toTeX toJSON toNumbers</code>. <code>Complex.parse(text)</code>, <code>Complex.from(x)</code>, <code>Complex.ZERO ONE I</code>.</td></tr>
+<tr><td><code>CQ</code></td><td>The field \(\mathbb{Q}(i)\) as a RatMath field object, for linalg and structures.</td></tr>
+<tr><td><code>ComplexError</code></td><td>Thrown with a <code>code</code>: <code>division-by-zero</code>, <code>branch-cut</code>, <code>branch-point</code>, <code>pole</code>, <code>precision</code>, <code>bad-option</code>; and from the cayley entry point <code>no-quotient</code>, <code>not-a-rotation</code>, <code>too-large</code>.</td></tr>
+</table></div>
+<h2>Enclosures</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>rect(a, b)</code></td><td><code>rect("1 + 2i")</code> a point; <code>rect([0, 1], [2, 3])</code> the rectangle [0,1] + i[2,3]; <code>rect(z, radius)</code> the square around z.</td></tr>
+<tr><td><code>Rect</code></td><td><code>.re</code>, <code>.im</code> as <code>{ lo, hi }</code>; <code>.real</code>, <code>.imag</code> as Core RationalIntervals; <code>center width height size isPoint</code>; <code>add sub mul div inv neg conj scale timesI pow</code>; <code>contains intersects intersect hull containsZero</code>; <code>corners() split() round(bits) toDisc() normRange()</code>; <code>toString(digits) toJSON()</code>. <code>Rect.from(x)</code>, <code>Rect.hull(...items)</code>.</td></tr>
+<tr><td><code>disc(center, radius)</code></td><td>The closed disc with rational centre and radius.</td></tr>
+<tr><td><code>Disc</code></td><td><code>.center</code>, <code>.radius</code>; <code>add sub mul div inv neg conj scale</code>; <code>contains intersects hull containsZero</code> (decided exactly); <code>toRect()</code>.</td></tr>
+</table></div>
+<h2>Polar form</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>polar(z, bits)</code></td><td><code>{ modulus, argument, normSquared, exactModulus, exactTurn }</code> for an exact z; the first two are Core RationalIntervals.</td></tr>
+<tr><td><code>modulus(z, bits)</code></td><td>|z| as a RationalInterval; also for a rectangle or disc.</td></tr>
+<tr><td><code>argument(z, bits)</code></td><td>The principal argument in (−π, π] as a RationalInterval.</td></tr>
+<tr><td><code>arg(z, options)</code></td><td>The argument as a <code>Branched</code> result, for inputs that may lie across the negative real axis.</td></tr>
+<tr><td><code>exactTurn(z)</code></td><td>The angle as a fraction of a full turn when that is rational (a multiple of 1/8), else null.</td></tr>
+<tr><td><code>fromPolar(r, theta, bits)</code></td><td>A Rect around \(re^{i\theta}\). <code>theta</code> in radians, or <code>{ turns: q }</code>.</td></tr>
+<tr><td><code>rootsOfUnity(n, bits)</code></td><td>The n-th roots of unity, counter-clockwise from 1; the rational ones exact.</td></tr>
+<tr><td><code>roots(z, n, bits)</code></td><td>All n values of the n-th root of an exact z.</td></tr>
+</table></div>
+<h2>Functions</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>exp sin cos tan sinh cosh tanh</code></td><td><code>f(z, bits)</code> or <code>f(z, { bits })</code> returns a Rect. z is exact, a Rect or a Disc. <code>tan</code> and <code>tanh</code> refuse an enclosure that may contain a pole.</td></tr>
+<tr><td><code>log(z, options)</code></td><td>A <code>Branched</code>. Cut: the negative real axis. Options <code>{ bits, branch: k, side: "above" | "below" }</code>; branch k adds 2πik.</td></tr>
+<tr><td><code>sqrt(z, options), root(z, n, options)</code></td><td>A <code>Branched</code>; exact when the square root is a complex rational. Branch k multiplies by \(e^{2\pi ik/n}\).</td></tr>
+<tr><td><code>pow(z, w, options)</code></td><td>\(z^w\). Exact for a whole-number w and exact z; a rational w goes through <code>root</code>; otherwise \(e^{w\log z}\).</td></tr>
+<tr><td><code>asin acos atanh</code></td><td><code>Branched</code>; cut on the real axis outside [−1, 1]; sides above, below.</td></tr>
+<tr><td><code>atan asinh</code></td><td><code>Branched</code>; cut on the imaginary axis outside [−i, i]; sides right, left.</td></tr>
+<tr><td><code>acosh</code></td><td><code>Branched</code>; cut on the real axis left of 1; sides above, below.</td></tr>
+<tr><td><code>Branched</code></td><td><code>value</code> (Rect or null), <code>straddles</code>, <code>cut</code>, <code>candidates</code> ([{ side, value }]), <code>convention</code> ({ side, value } for an exact point on the cut, else null), <code>branch</code>; getters <code>rect</code> (throws on the cut) and <code>hull</code>.</td></tr>
+<tr><td><code>continueAlong(fn, path, options)</code></td><td>Carry <code>"log"</code>, <code>{ root: n }</code> or <code>{ pow: w }</code> along a polygonal path of exact points: <code>{ value, turns, branch, values }</code>. Options <code>bits</code>, <code>branch</code>, <code>about</code>.</td></tr>
+<tr><td><code>winding(path, w)</code></td><td>The winding number of a closed polygon about w (default 0), exact.</td></tr>
+<tr><td><code>refined(name, z, options)</code></td><td>A Core <code>Refinement</code>: <code>.quick</code> at once, <code>.exact()</code> certified.</td></tr>
+<tr><td><code>plan</code></td><td>The phases still to come.</td></tr>
+</table></div>
+<h2>@ratmath/complex/cayley: the algebras</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>quaternions, octonions, sedenions</code></td><td>The algebras of dimension 4, 8 and 16 over the rationals.</td></tr>
+<tr><td><code>cayleyDickson(level, field)</code></td><td>The algebra of dimension \(2^{\text{level}}\) (level 0 to 8) over a field object, the rationals by default.</td></tr>
+<tr><td><code>CayleyDickson</code></td><td><code>level dim name labels field zero one units</code>; <code>basis(i)</code>, <code>of(...coefficients)</code>, <code>parse(text)</code>, <code>properties()</code> → <code>{ commutative, associative, alternative, flexible, composition, zeroDivisors }</code>.</td></tr>
+<tr><td><code>quaternion(w, x, y, z), octonion(...c)</code></td><td>Elements from coordinates or text (<code>"1 + 2i - k"</code>, <code>"e1 + 2 e7"</code>).</td></tr>
+<tr><td><code>Hyper</code></td><td>An element: <code>.coeffs</code>, <code>.algebra</code>, <code>.real</code>, <code>.imaginary</code>; <code>add sub mul neg scale conj norm inv pow rightDivide leftDivide commutator associator equals isZero</code>.</td></tr>
+<tr><td><code>QQ</code></td><td>The rationals as a field object.</td></tr>
+</table></div>
+<h2>@ratmath/complex/cayley: rotations</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>rotate(q, v)</code></td><td>The vector part of \(qvq^{-1}\), as three Rationals.</td></tr>
+<tr><td><code>rotationMatrix(q)</code></td><td>The 3×3 rotation matrix as rows of Rationals. q need not have norm 1.</td></tr>
+<tr><td><code>fromRotationMatrix(M)</code></td><td>The primitive quaternion of a rational rotation matrix; refuses a matrix that is not a rotation.</td></tr>
+<tr><td><code>fromAxis(axis, t)</code></td><td>\(1 + t\cdot\)axis: for a unit axis, t is the tangent of half the angle.</td></tr>
+<tr><td><code>rotationOf(q)</code></td><td><code>{ axis, cos, tanHalfSquared }</code>, exact.</td></tr>
+<tr><td><code>primitive(q)</code></td><td>The same rotation with whole-number coordinates sharing no factor, the first nonzero one positive.</td></tr>
+<tr><td><code>interpolate(q0, q1, t)</code></td><td>\((1 - t)q_0 + tq_1\) the shorter way round: an exact rotation on the arc between them.</td></tr>
+</table></div>
+<h2>@ratmath/complex/cayley: integer quaternions</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>hurwitz(a, b, c, d)</code></td><td>A <code>Hurwitz</code> from coordinates that are all whole numbers or all halves of odd numbers, or from a quaternion.</td></tr>
+<tr><td><code>Hurwitz</code></td><td><code>add sub mul neg conj equals isZero</code>; <code>norm()</code> (BigInt); <code>divmod(b)</code> → <code>{ quotient, remainder }</code> with this = quotient·b + remainder; <code>isLipschitz</code>, <code>toIntegers()</code>, <code>toQuaternion()</code>. The constructor takes doubled coordinates.</td></tr>
+<tr><td><code>hurwitzUnits()</code></td><td>The 24 units.</td></tr>
+<tr><td><code>hurwitzGcd(a, b)</code></td><td>A right greatest common divisor.</td></tr>
+<tr><td><code>quaternionOfNorm(p)</code></td><td>A Lipschitz quaternion of norm p, for a prime p.</td></tr>
+<tr><td><code>fourSquares(n)</code></td><td>Four BigInts, largest first, whose squares add to n.</td></tr>
+<tr><td><code>fourSquaresCount(n)</code></td><td>The number of ordered, signed representations of n as four squares (Jacobi).</td></tr>
 </table></div>
 <template data-runbox>
-// The one export so far.
-for (const p of plan) PRINT(`phase ${p.phase}:`, p.contents, `(${p.estimate} lines)`);
-plan.length
+// One of each.
+const z = complex("3 + 4i");
+PRINT("complex   ", z.toString(), " norm", z.norm().toString(), " sqrt", z.exactSqrt()[0].toString());
+PRINT("rect      ", rect("1 + i", "1/10").mul(rect("2 - i", "1/10")).toString());
+PRINT("disc      ", disc("1 + i", "1/10").inv().toString());
+PRINT("polar     ", polar(z).exactModulus.toString(), "at", argument(z, 30).low.toNumber().toFixed(8), "rad");
+PRINT("exp       ", exp(z, 80).toString(20));
+PRINT("log       ", log(z).toString());
+PRINT("log(-1)   ", log(-1).toString(6));
+PRINT("root      ", root("-8", 3, { branch: 1, side: "above" }).toString(6), " (the real cube root of -8 is branch 1)");
+PRINT("pow       ", pow("2", "1/2", 100).toString(25));
+PRINT("asin      ", asin("1/2 + i").toString());
+PRINT("continue  ", continueAlong("log", ["1", "i", "-1", "-i", "1"]).turns, "turn");
+PRINT("winding   ", winding(["1", "i", "-1", "-i"]));
+PRINT("quaternion", quaternion(1, 2, 3, 4).inv().toString());
+PRINT("rotate    ", rotate("1 + i + j + k", [1, 2, 3]).join(", "));
+PRINT("hurwitz   ", hurwitz(7, 3, -2, 5).divmod(hurwitz(2, 1, 1, 0)).remainder.toString());
+PRINT("4 squares ", fourSquares(2026).join(", "));
+Object.keys(octonions.properties())
 </template>
 </article>
 </main>

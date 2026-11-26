@@ -3,32 +3,70 @@
 Complex numbers and complex analysis for [RatMath](https://ratmath.com/), part of the
 [RatMath Shelf](https://ratmath.com/shelf/).
 
-**Status: set up, nothing built yet.** This repository holds the package
-skeleton and the docs site. The plan is in the
-[library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex).
+Exact complex rationals, certified enclosures of what is not rational, and
+elementary functions that report their branch cuts instead of silently picking
+a side. Quaternions, octonions and the rest of the Cayley–Dickson numbers are
+at `@ratmath/complex/cayley`. Docs: [ratmath.com/complex](https://ratmath.com/complex/).
 
-Exact complex rationals, elementary functions that say which branch they took, and complex analysis with proofs: contour integrals, residues and zero counts enclosed in rectangles that are guaranteed to contain the truth. Quaternions and octonions live here too.
+```js
+import { complex, exp, log, sqrt } from "@ratmath/complex";
+
+String(complex("(1 + 2i)/(3 - i)"));   // "1/10 + 7/10i", exactly
+String(sqrt("3 + 4i"));                // "2 + i"
+String(exp("1 + i"));                  // "1.4686939399 + 2.2873552872i ± 1.7e-21"
+String(log("-1"));                     // on the cut: iπ from above, −iπ from below; convention: above
+String(log("-1", { side: "below" }));  // "0 - 3.1415926536i ± 1.7e-21"
+
+import { quaternion, rotate, fourSquares } from "@ratmath/complex/cayley";
+
+String(quaternion("1 + 2i").mul("j"));    // "j + 2k"
+rotate("1 + k", [1, 0, 0]).map(String);   // ["0", "1", "0"]
+fourSquares(2026);                        // [23n, 23n, 22n, 22n]
+```
+
+## What is built
+
+- **Complex rationals**: `complex`, `Complex`, the field object `CQ`. Exact
+  arithmetic, norms, exact square roots when they exist.
+- **Enclosures**: `rect`, `Rect`, `disc`, `Disc`, with rational data, and
+  arithmetic that contains every possible result.
+- **Polar form**: `polar`, `modulus`, `argument`, `exactTurn`, `fromPolar`,
+  `roots`, `rootsOfUnity`.
+- **Functions**: `exp sin cos tan sinh cosh tanh` at any precision, on exact
+  numbers or enclosures.
+- **Branches**: `log sqrt root pow asin acos atan asinh acosh atanh` return a
+  `Branched` result that says when the input is on a cut and gives the value on
+  each side; `continueAlong` and `winding` follow a branch along a path.
+- **Cayley–Dickson numbers** (`/cayley`): `quaternions`, `octonions`,
+  `sedenions`, `cayleyDickson(level, field)`, with `properties()` that computes
+  which laws hold and exhibits zero divisors.
+- **Rotations** (`/cayley`): `rotate`, `rotationMatrix`, `fromRotationMatrix`,
+  `fromAxis`, `rotationOf`, `interpolate`, all exact.
+- **Integer quaternions** (`/cayley`): `hurwitz`, `divmod`, `hurwitzGcd`,
+  `quaternionOfNorm`, `fourSquares`, `fourSquaresCount`.
 
 ## Planned
 
+From the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex).
+
 | Phase | Contents |
 |---|---|
-| 1 | Exact complex rationals, rectangles and discs, polar form, elementary functions with branch reporting |
-| 2 | Cayley–Dickson numbers, quaternion rotations, integer quaternions |
 | 3 | Complex Taylor models; contour integrals; argument principle and zero isolation |
 | 4 | Residues, Laurent series, singularities, real integrals by residues |
 | 5 | Möbius and conformal maps; graphics hooks |
 | 6 | Complex gamma and zeta |
 
-It will depend on: Core and analytic (real enclosures of exp, sin, atan and the constants), and optionally algebraic for conversions.
+It depends on Core and on analytic (certified real exp, log, sine, cosine and
+arctangent). Analytic is not on npm yet, so it is a git submodule under
+`vendor/` and a workspace: clone with `--recurse-submodules`.
 
 ## Layout
 
-- `index.js`, `src/`: the library. For now it exports only `plan`, the list
-  above, so that the tests and the docs build have something to load.
+- `index.js`, `cayley.js`, `src/`: the library and its two entry points.
+- `vendor/analytic`: the analytic library as a submodule.
 - `tests/`: `bun run test`.
-- `docs/src/*.html`: the docs pages (overview, explore, reference, then one
-  page per topic as topics are built). `bun run docs:build` writes `docs/`,
+- `docs/src/*.html`: the docs pages (overview, explore, reference, and one
+  page per topic). `bun run docs:build` writes `docs/`,
   typesets the mathematics and runs the code box at the end of every page.
   `docs/*.html` and `docs/assets/complex.js` are build output.
 - `docs/assets/runbox.js` and `scripts/docs-kit.js` are shared with the other
@@ -37,6 +75,7 @@ It will depend on: Core and analytic (real enclosures of exp, sin, atan and the 
 ## Development
 
 ```sh
+git submodule update --init
 bun install
 bun run test
 bun run docs:build

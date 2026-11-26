@@ -1,6 +1,6 @@
 {
   "name": "@ratmath/complex",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions",
   "type": "module",
   "main": "index.js",
@@ -9,11 +9,17 @@
       "types": "./index.d.ts",
       "default": "./index.js"
     },
+    "./cayley": {
+      "types": "./cayley.d.ts",
+      "default": "./cayley.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
     "index.d.ts",
+    "cayley.js",
+    "cayley.d.ts",
     "src/",
     "README.md",
     "CHANGELOG.md",
@@ -43,7 +49,8 @@
     "url": "https://github.com/ratmath/complex/issues"
   },
   "dependencies": {
-    "@ratmath/core": "^0.10.0"
+    "@ratmath/core": "^0.10.0",
+    "@ratmath/analytic": "^0.1.0"
   },
   "devDependencies": {
     "katex": "0.19.1"
@@ -55,5 +62,8 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "workspaces": [
+    "vendor/analytic"
+  ]
 }

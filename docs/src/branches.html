@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Branches · RatMath Complex</title>
+<meta name="description" content="Logarithms, roots, powers and inverse functions in @ratmath/complex: branch cuts are reported, both sides are given, and branches can be continued along a path.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Branches</div>
+<h1>Branches and cuts</h1>
+<p class="lede">The logarithm, roots, powers and the inverse trigonometric functions have many values. Choosing one everywhere forces a jump along a curve, the branch cut. This package tells you when an input is on a cut, gives the value on each side, and can follow a branch continuously along a path.</p>
+
+<h2>The logarithm</h2>
+<p>\(e^w = z\) has the solutions \(w = \log|z| + i(\theta + 2\pi k)\) for every whole number \(k\). The <em>principal</em> one takes \(\theta\) in \((-\pi, \pi]\). It is continuous everywhere except across the negative real axis, where its imaginary part jumps from \(\pi\) (just above) to \(-\pi\) (just below).</p>
+<pre><code>import { log, rect } from "@ratmath/complex";
+
+const a = log("1 + i");
+String(a);            // "0.34657359028 + 0.7853981634i ± 4.2e-22"
+a.value;              // the Rect
+a.straddles;          // false
+
+const b = log("-1");
+b.straddles;          // true: the input is on the cut
+b.value;              // null
+b.candidates;         // [{ side: "above", value: Rect }, { side: "below", value: Rect }]
+b.convention.side;    // "above": what the usual convention picks for a point exactly on the cut
+String(b);
+// on the cut (the negative real axis).  above: 0 + 3.1415926536i ± 1.7e-21;
+// below: 0 - 3.1415926536i ± 1.7e-21.  Convention: above
+
+String(log("-1", { side: "below" }));   // "0 - 3.1415926536i ± 1.7e-21"
+String(log("i", { branch: 1 }));        // "0 + 7.853981634i ± 3.4e-21  (branch 1)": adds 2πi</code></pre>
+<p>Every function on this page returns a <code>Branched</code> result with these fields. <code>.rect</code> is the value when there is one and otherwise throws a <code>ComplexError</code> (code <code>branch-cut</code>) that names the sides to choose from, so code that never expects a cut fails loudly instead of quietly using the wrong value. <code>.hull</code> is a rectangle around every candidate.</p>
+
+<h2>Why report instead of choosing</h2>
+<p>For the exact point \(-1\) there is a convention, and it is reported. The real trouble is an <em>uncertain</em> input. Suppose a calculation gives \(z = -2\) with an error of \(10^{-10}\) in each part. Is \(\log z\) near \(i\pi\) or near \(-i\pi\)? The enclosure of \(z\) lies across the cut, the true \(z\) could be on either side, and the two answers differ by \(2\pi i\). Floating-point arithmetic picks whichever side the rounding error happened to land on. Here the result says <code>straddles: true</code>, gives both candidates, and has no convention, because none would be honest:</p>
+<pre><code>const c = log(rect("-2", "1/10"));
+c.straddles;       // true
+c.convention;      // null
+c.candidates.map((x) =&gt; `${x.side}: ${x.value}`);
+// ["above: 0.69246186711 + 3.11530112278i ± 5.1e-2", "below: 0.69246186711 - 3.11530112278i ± 5.1e-2"]</code></pre>
+<p>Each candidate is the function continued from that side over the whole input, so if you know from elsewhere which side the true value is on, <code>{ side }</code> gives a correct enclosure.</p>
+
+<h2>Roots and powers</h2>
+<p>The principal \(n\)-th root is \(e^{(\log z)/n}\) with the principal logarithm, so it has the same cut and its angle lies in \((-\pi/n, \pi/n]\). <code>{ branch: k }</code> multiplies by \(e^{2\pi i k/n}\). A square root that is a complex rational is returned exactly.</p>
+<pre><code>import { sqrt, root, pow } from "@ratmath/complex";
+
+String(sqrt("3 + 4i"));                 // "2 + i"
+String(sqrt("-4"));                     // on the cut.  above: 2i;  below: -2i.  Convention: above
+String(sqrt("-4", { side: "below" }));  // "-2i"
+String(root("-8", 3));                  // on the cut: 1 + 1.732…i above, 1 − 1.732…i below
+String(pow("i", "i"));                  // "0.20787957635 + 0i ± 1.1e-22": e^(−π/2)
+String(pow("1 + i", 10).value);         // "32i": whole-number powers of exact numbers are exact</code></pre>
+<p>The principal cube root of \(-8\) is not \(-2\). The real cube root is branch 1 of the three; a real-number calculator picks it because it never leaves the real line. <code>roots(z, n)</code> returns all \(n\).</p>
+<p>\(z^w = e^{w \log z}\) inherits the logarithm's cut and its branches. A whole-number exponent has no cut at all, and a rational exponent \(p/q\) is computed as the \(q\)-th root to the power \(p\), so that exact roots stay exact.</p>
+
+<h2>Inverse functions</h2>
+<p>Each is defined by a formula in logarithms and square roots, and its cuts come from theirs:</p>
+<div class="tablewrap"><table class="ref">
+<tr><th>Function</th><th>Formula</th><th>Cut</th><th>Sides</th></tr>
+<tr><td><code>asin</code></td><td>\(-i\log\!\big(iz + \sqrt{1 - z}\sqrt{1 + z}\big)\)</td><td>the real axis outside \([-1, 1]\)</td><td>above, below</td></tr>
+<tr><td><code>acos</code></td><td>\(\pi/2 - \arcsin z\)</td><td>the same</td><td>above, below</td></tr>
+<tr><td><code>atan</code></td><td>\(-i\,\operatorname{atanh}(iz)\)</td><td>the imaginary axis outside \([-i, i]\)</td><td>right, left</td></tr>
+<tr><td><code>asinh</code></td><td>\(-i\arcsin(iz)\)</td><td>the imaginary axis outside \([-i, i]\)</td><td>right, left</td></tr>
+<tr><td><code>acosh</code></td><td>\(\log\!\big(z + \sqrt{z - 1}\sqrt{z + 1}\big)\)</td><td>the real axis left of 1</td><td>above, below</td></tr>
+<tr><td><code>atanh</code></td><td>\(\tfrac12\big(\log(1 + z) - \log(1 - z)\big)\)</td><td>the real axis outside \([-1, 1]\)</td><td>above, below</td></tr>
+</table></div>
+<p>So <code>asin("2")</code> is on a cut. Its two candidates are \(\pi/2 \pm 1.3169\ldots i\), and the convention reported for the exact point is the one the formula gives with principal values, with nothing else decided by hand. Conventions on cuts differ between systems (some use the sign of a floating-point zero to pick the side), which is one more reason the result names the side instead of leaving you to find out.</p>
+
+<h2>Following a branch along a path</h2>
+<p>A branch can be continued along any path that avoids the branch point: keep the value changing continuously, and when the path crosses the cut, move to the next branch instead of jumping. <code>continueAlong</code> does this for a polygonal path of exact points, and the crossings are decided exactly, with no numerical tolerance.</p>
+<pre><code>import { continueAlong, winding } from "@ratmath/complex";
+
+const loop = ["1", "i", "-1", "-i", "1"];        // once round the origin
+const r = continueAlong("log", loop);
+String(r.value);     // "0 + 6.2831853072i ± 3.4e-21": log 1 has become 2πi
+r.turns;             // 1
+r.values;            // the value at every vertex
+
+String(continueAlong({ root: 2 }, loop).value);   // "-1 + 0i ± 4.2e-22": √1 has become −1
+winding(loop);       // 1: the winding number about 0, exact
+winding(["2", "2i", "-2", "-2i"], "1/2");         // about another point</code></pre>
+<p>This is the monodromy of the function: going once round the branch point adds \(2\pi i\) to the logarithm and multiplies an \(n\)-th root by \(e^{2\pi i/n}\). The surface on which these functions become single-valued, the Riemann surface, is exactly the record of how many times you have been round. <code>{ about: c }</code> puts the branch point at \(c\) instead of 0.</p>
+<template data-runbox>
+// A measurement of -2 with a small error, through the logarithm.
+const z = rect("-2", "1/1000");
+const l = log(z);
+PRINT("log of", z.toString());
+PRINT("  straddles the cut:", l.straddles, "  convention:", l.convention);
+for (const c of l.candidates) PRINT("  if it is", c.side, "the axis:", c.value.toString());
+
+// Move the same rectangle just off the cut and the question goes away.
+PRINT("log just above:", log(rect("-2 + 1/100i", "1/1000")).toString());
+
+// The six inverses at a point on a cut of each
+for (const [name, f, at] of [["asin", asin, "2"], ["acos", acos, "2"], ["atanh", atanh, "2"], ["atan", atan, "2i"], ["asinh", asinh, "2i"], ["acosh", acosh, "-3"]]) {
+  const r = f(at);
+  PRINT(`${name}(${at})`.padEnd(10), r.candidates.map((c) =&gt; `${c.side} ${c.value.toString(6)}`).join("   "), "  convention:", r.convention.side);
+}
+
+// Walk a cube root round the origin three times: it returns only after the third.
+const loop = ["1", "i", "-1", "-i", "1"];
+let path = ["1"];
+for (let turn = 1; turn &lt;= 3; turn++) {
+  path = [...path, ...loop.slice(1)];
+  PRINT(`after ${turn} turn${turn &gt; 1 ? "s" : ""}: 1^(1/3) =`, continueAlong({ root: 3 }, path).value.toString(8));
+}
+winding(path)
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

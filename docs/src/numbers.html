@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Complex rationals · RatMath Complex</title>
+<meta name="description" content="Exact complex rationals in @ratmath/complex: reading, arithmetic, norms, exact square roots and the field object.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Complex rationals</div>
+<h1>Complex rationals</h1>
+<p class="lede">A complex rational is \(a + bi\) with \(a\) and \(b\) fractions. They are closed under the four operations, so arithmetic on them is exact, with no rounding anywhere.</p>
+
+<h2>Writing one</h2>
+<pre><code>import { complex, Complex } from "@ratmath/complex";
+
+complex("3 - 4i");               // from text
+complex(3, -4);                  // from two parts, each anything Core reads
+complex(["1/2", "0.#3"]);        // 1/2 + 1/3 i
+complex("(1 + 2i)/(3 - i)");     // text may be an expression: 1/10 + 7/10i
+complex("(1 + i)^8");            // 16
+complex(0.1);                    // 1/10: a decimal number means the decimal it prints as</code></pre>
+<p>Text is exact arithmetic on numbers in Core's notation (<code>1/2</code>, <code>0.25</code>, <code>0.#3</code> for a repeating decimal, <code>1..1/2</code> for a mixed number), the letter <code>i</code>, <code>+ - * /</code>, <code>^</code> with a whole-number exponent, and parentheses. <code>3/4i</code> reads as \(\tfrac34 i\), the way it is written by hand.</p>
+
+<h2>Arithmetic</h2>
+<pre><code>const z = complex("3 + 4i");
+String(z.add("1 - i"));      // "4 + 3i"
+String(z.mul("1/2 + i"));    // "-5/2 + 5i"
+String(z.div("1 - 2i"));     // "-1 + 2i"
+String(z.inv());             // "3/25 - 4/25i"
+String(z.pow(-2));           // "-7/625 - 24/625i"
+String(z.conj());            // "3 - 4i"
+String(z.norm());            // "25": |z|², always rational
+String(z.exactModulus());    // "5": |z| when it is rational, else null
+z.equals("3 + 4i");          // true: equality is exact</code></pre>
+<p>Every method takes its argument in any of the forms <code>complex</code> reads. The parts are Core <code>Rational</code>s at <code>z.re</code> and <code>z.im</code>. Division by zero throws a <code>ComplexError</code> with <code>code: "division-by-zero"</code>.</p>
+
+<h2>Why the norm and not the modulus</h2>
+<p>The modulus \(|z| = \sqrt{a^2 + b^2}\) is usually irrational: \(|1 + i| = \sqrt2\). Its square, the <em>norm</em> \(N(z) = z\bar z = a^2 + b^2\), is always rational and is multiplicative, \(N(zw) = N(z)N(w)\). So the exact layer works with the norm, and the modulus is an enclosure (see <a href="polar.html">Polar form</a>) except when it happens to be rational, which is exactly when \((a, b, |z|)\) is a rational Pythagorean triple.</p>
+
+<h2>Exact square roots</h2>
+<p>Writing \(w = x + iy\) with \(w^2 = a + bi\) gives \(x^2 = (|z| + a)/2\) and \(y^2 = (|z| - a)/2\), with the sign of \(y\) that of \(b\). So \(\sqrt z\) is a complex rational exactly when \(|z|\) is rational and both of those are squares of rationals:</p>
+<pre><code>complex("3 + 4i").exactSqrt().map(String);    // ["2 + i", "-2 - i"]
+complex("-5 - 12i").exactSqrt().map(String);  // ["2 - 3i", "-2 + 3i"]
+complex("-4").exactSqrt().map(String);        // ["2i", "-2i"]
+complex("2").exactSqrt();                     // null: use sqrt() for an enclosure</code></pre>
+
+<h2>As a field</h2>
+<p><code>CQ</code> is the field \(\mathbb{Q}(i)\) as a RatMath field object (<code>add</code>, <code>mul</code>, <code>inv</code>, <code>zero</code>, <code>one</code> and the rest), which is what <a href="https://ratmath.com/linalg/">linalg</a> matrices and <a href="https://ratmath.com/structures/">structures</a> polynomials take when their entries are complex. Its <code>sign</code> is 0 for zero and 1 otherwise, because the complex numbers cannot be ordered: if \(i\) were positive or negative, \(i^2 = -1\) would be positive.</p>
+<template data-runbox>
+// Gaussian rationals on the unit circle come from Pythagorean triples:
+// (m + ni)² / (m² + n²) has modulus exactly 1.
+const onCircle = (m, n) =&gt; complex(m, n).pow(2).scale(new Rational(1, m * m + n * n));
+for (const [m, n] of [[2, 1], [3, 2], [4, 1], [5, 2]]) {
+  const z = onCircle(m, n);
+  PRINT(`(${m} + ${n}i)²/${m * m + n * n} = ${z}`, "  norm", z.norm().toString());
+}
+
+// Their products are again on the circle: rotations with no rounding, ever.
+let w = complex(1);
+for (let k = 0; k &lt; 6; k++) w = w.mul(onCircle(2, 1));
+PRINT("six of the first in a row:", w.toString(), "  norm", w.norm().toString());
+
+// Exact roots, when there are some
+for (const t of ["3 + 4i", "-5 - 12i", "5 + 12i", "2i", "1 + i"]) {
+  const r = complex(t).exactSqrt();
+  PRINT(`sqrt(${t}) =`, r ? r[0].toString() : "not a complex rational");
+}
+
+// The field object, as linalg would use it
+CQ.format(CQ.div(CQ.from("1 + i"), CQ.from("1 - i")))
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Integer quaternions · RatMath Complex</title>
+<meta name="description" content="Hurwitz and Lipschitz integer quaternions in @ratmath/complex/cayley: division with remainder, greatest common divisors, and sums of four squares.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Integer quaternions</div>
+<h1>Integer quaternions and four squares</h1>
+<p class="lede">Quaternions with whole-number coordinates have an arithmetic like that of the integers, with primes and greatest common divisors, once one extra family is let in. The reward is Lagrange's theorem: every whole number is a sum of four squares, with the squares computed.</p>
+
+<h2>Lipschitz and Hurwitz</h2>
+<p>The obvious integer quaternions are the <em>Lipschitz</em> ones, \(a + bi + cj + dk\) with whole numbers. They are not enough: division with a smaller remainder can fail. To divide, you round the exact quotient to the nearest integer quaternion, and the centre of a unit cell, \(\tfrac12(1 + i + j + k)\), is at distance exactly 1 from every corner, so the remainder can be as large as the divisor.</p>
+<p>Hurwitz's repair is to add those centres. A <em>Hurwitz</em> quaternion has coordinates that are all whole numbers or all halves of odd numbers. Now the farthest any point is from the nearest Hurwitz quaternion is \(1/\sqrt2\), the remainder is always smaller than the divisor, and Euclid's algorithm works.</p>
+<pre><code>import { hurwitz, hurwitzUnits, hurwitzGcd } from "@ratmath/complex/cayley";
+
+const a = hurwitz(7, 3, -2, 5);
+const b = hurwitz(2, 1, 1, 0);
+a.norm();  b.norm();                    // 87n, 6n: norms are whole numbers (BigInt)
+const { quotient, remainder } = a.divmod(b);
+String(quotient);                       // "5/2 + 1/2i - 5/2j + 1/2k"
+String(remainder);                      // "k"
+quotient.mul(b).add(remainder).equals(a);   // true:  a = quotient·b + remainder,  N(remainder) &lt; N(b)
+
+hurwitz("1/2", "1/2", "1/2", "1/2").norm();  // 1n: a unit
+hurwitzUnits().length;                  // 24</code></pre>
+<p>There are 24 units (elements of norm 1): \(\pm1, \pm i, \pm j, \pm k\) and the sixteen \(\tfrac12(\pm1 \pm i \pm j \pm k)\). They form a group, the binary tetrahedral group, whose rotations are the twelve symmetries of a tetrahedron. A <code>Hurwitz</code> has <code>add sub mul neg conj norm divmod equals</code>, <code>isLipschitz</code>, <code>toIntegers()</code> and <code>toQuaternion()</code>.</p>
+
+<h2>Greatest common divisors</h2>
+<p>Because multiplication does not commute, there are divisors on the right and on the left. <code>divmod</code> divides on the right, and <code>hurwitzGcd(a, b)</code> is a right greatest common divisor: \(a = a'g\) and \(b = b'g\), and every common right divisor divides \(g\). It is determined up to one of the 24 units on the left.</p>
+<pre><code>const c = hurwitz(1, 2, 0, 0);
+String(hurwitzGcd(hurwitz(3, 1, -2, 5).mul(c), hurwitz(2, 1, 1, 0).mul(c)));
+// "2 - i", which is −i·(1 + 2i): the common factor, up to a unit</code></pre>
+
+<h2>Four squares</h2>
+<p>The norm of \(a + bi + cj + dk\) is \(a^2 + b^2 + c^2 + d^2\), and norms multiply. So if two numbers are sums of four squares, so is their product, and the product quaternion writes it as one. It remains to handle primes, and the proof is an algorithm:</p>
+<ol>
+<li>For an odd prime \(p\), the congruence \(x^2 + y^2 + 1 \equiv 0 \pmod p\) has a solution (the \((p+1)/2\) values of \(x^2\) and the \((p+1)/2\) values of \(-1 - y^2\) cannot all be different).</li>
+<li>Then \(p\) divides the norm of \(x + yi + j\) without dividing the quaternion itself.</li>
+<li>So the right gcd of \(x + yi + j\) and \(p\) is neither a unit nor \(p\) times one: it has norm exactly \(p\).</li>
+<li>If that gcd has half-integer coordinates, one of the units times it does not.</li>
+</ol>
+<pre><code>import { quaternionOfNorm, fourSquares, fourSquaresCount } from "@ratmath/complex/cayley";
+
+String(quaternionOfNorm(7));          // "1 + i + j + 2k":  1 + 1 + 1 + 4 = 7
+String(quaternionOfNorm(1000003));    // "-699 - 151i - 699j"
+fourSquares(2026);                    // [23n, 23n, 22n, 22n]
+fourSquares(310);                     // [15n, 7n, 6n, 0n]
+fourSquares(10n ** 18n + 9n);         // [1000000000n, 3n, 0n, 0n]</code></pre>
+<p><code>fourSquares(n)</code> factors \(n\), takes a quaternion of norm \(p\) for each prime factor and multiplies them. It needs the factorisation, so it refuses (code <code>too-large</code>) a number with two prime factors above a million; a number-theory package will lift that limit.</p>
+
+<h2>How many ways</h2>
+<p>Jacobi's four-square theorem counts the representations, with order and signs distinguished:</p>
+\[ r_4(n) = 8 \sum_{d \mid n,\ 4 \nmid d} d. \]
+<pre><code>fourSquaresCount(1);      // 8n:  (±1, 0, 0, 0) in each of four places
+fourSquaresCount(7);      // 64n
+fourSquaresCount(2026);   // 24336n</code></pre>
+<p>For an odd prime this is \(8(p + 1)\), which is also the number of Lipschitz quaternions of norm \(p\).</p>
+<template data-runbox>
+// Division: where whole-number coordinates fail and Hurwitz ones succeed.
+const a = hurwitz(1, 1, 1, 1), b = hurwitz(2, 0, 0, 0);
+const d = a.divmod(b);
+PRINT(`(${a}) ÷ 2:  quotient ${d.quotient},  remainder ${d.remainder}`);
+PRINT("  (with whole-number quotients only, every remainder would have norm 4 = N(2))");
+
+// Euclid's algorithm, step by step
+const common = hurwitz(1, 2, 0, 0);
+let x = hurwitz(3, 1, -2, 5).mul(common), y = hurwitz(2, 1, 1, 0).mul(common);
+while (!y.isZero()) {
+  const { quotient, remainder } = x.divmod(y);
+  PRINT(`N = ${String(x.norm()).padStart(4)}:  (${x}) = (${quotient})·(${y}) + (${remainder})`);
+  [x, y] = [y, remainder];
+}
+PRINT("right gcd:", x.toString(), " of norm", x.norm().toString(), "  (the common factor 1 + 2i, times the unit -i)");
+
+// Lagrange's theorem for a few numbers, built from primes.
+for (const n of [7, 15, 310, 2026, 999983]) {
+  const s = fourSquares(n);
+  PRINT(`${n} = ${s.map((v) =&gt; `${v}²`).join(" + ")}`, "   ways:", fourSquaresCount(n).toString());
+}
+
+// Jacobi's count against brute force for a small number
+const n = 30;
+let ways = 0;
+for (let p = -5; p &lt;= 5; p++) for (let q = -5; q &lt;= 5; q++) for (let r = -5; r &lt;= 5; r++) for (let s = -5; s &lt;= 5; s++) if (p * p + q * q + r * r + s * s === n) ways++;
+[ways, fourSquaresCount(n)]
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>
