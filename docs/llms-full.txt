@@ -1,0 +1,1929 @@
+# @ratmath/complex 0.3.0: full documentation
+
+> Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions. From https://ratmath.com/complex/, commit 5735292. Each page ends with a runnable example; in it, PRINT(...) prints.
+
+
+---
+
+Page: https://ratmath.com/complex/index.html
+
+@ratmath/complex
+
+## Complex numbers that say which branch they took
+
+Exact complex rationals, certified enclosures of everything that is not rational, and elementary functions that report what happens at a branch cut instead of silently picking a side. Quaternions, octonions and the rest of the doubling ladder are here too, exact.
+
+### What is here
+
+Complex numbers with their functions; Möbius maps and the Riemann sphere; complex analysis with proofs (Taylor models, contour integrals, zeros, residues, the gamma and zeta functions); and the Cayley–Dickson numbers. Every phase of the roadmap for this package is built.
+
+### A first program
+
+```js
+import { complex, exp, log, sqrt, polar } from "@ratmath/complex";
+
+String(complex("(1 + 2i)/(3 - i)"));     // "1/10 + 7/10i", exactly
+String(complex("(1 + i)^8"));            // "16"
+String(sqrt("3 + 4i"));                  // "2 + i": exact when the root is rational
+
+String(exp("1 + i"));                    // "1.4686939399 + 2.2873552872i ± 1.7e-21"
+String(exp("1 + i", 200).toString(40));  // forty digits, still certified
+
+String(log("-1"));
+// on the cut (the negative real axis).  above: 0 + 3.1415926536i ± 1.7e-21;
+// below: 0 - 3.1415926536i ± 1.7e-21.  Convention: above
+String(log("-1", { side: "below" }));    // "0 - 3.1415926536i ± 1.7e-21"
+```
+
+Numbers are written as text (`"3 - 4i"`, `"1/2 + 0.#3i"`), as a pair `complex(3, -4)`, or as anything Core reads. The quaternions and their relatives are a separate entry point, so a program that only wants complex numbers does not load them:
+
+```js
+import { quaternion, rotate, fourSquares } from "@ratmath/complex/cayley";
+
+String(quaternion("1 + 2i").mul("j"));   // "j + 2k"
+rotate("1 + k", [1, 0, 0]).map(String);  // ["0", "1", "0"]: a quarter turn about z, exactly
+fourSquares(2026);                       // [23n, 23n, 22n, 22n]
+```
+
+### Four ideas
+
+Exact where the answer is rational. Sums, products, quotients and whole-number powers of complex rationals are complex rationals, and they are computed as such. So is 3+4i​=2+i, and so is any rotation by a rational quaternion.
+
+Enclosed where it is not. e1+i is not rational, so the answer is a small rectangle with rational corners that is proven to contain it. Ask for more bits and the rectangle shrinks. An uncertain input (a rectangle or a disc) gives a rectangle containing every possible value. See [Rectangles and discs](https://ratmath.com/complex/enclosures.html).
+
+Branch cuts are reported. log, roots, powers and the inverse trigonometric functions jump across a cut. When the input is on the cut, or an uncertain input lies across it, the result holds the value on each side and says so; a number is never returned from the wrong side by accident. See [Branches](https://ratmath.com/complex/branches.html).
+
+Whole functions are enclosed too. A [Taylor model](https://ratmath.com/complex/taylor-models.html) is a polynomial with a proven bound on what it leaves out, valid on a whole disc. From it come [contour integrals](https://ratmath.com/complex/contour-integrals.html) as rectangles, the number of [zeros](https://ratmath.com/complex/zeros.html) inside a contour as a proven whole number, [residues](https://ratmath.com/complex/residues.html), and [real integrals](https://ratmath.com/complex/real-integrals.html) with the steps shown. The [zeros of the zeta function](https://ratmath.com/complex/gamma-zeta.html) are found this way, each one proved to lie on the critical line.
+
+Maps of the sphere are exact. A [Möbius map](https://ratmath.com/complex/mobius.html) with complex rational coefficients sends rational points to rational points and circles to circles, exactly, and stereographic projection onto the [Riemann sphere](https://ratmath.com/complex/riemann-sphere.html) is rational too.
+
+### The roadmap
+
+From the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex). All six phases are built.
+
+| Phase | Contents | State |
+
+| 1 | Exact complex rationals, rectangles and discs, polar form, elementary functions with branch reporting | built |
+
+| 2 | Cayley–Dickson numbers, quaternion rotations, integer quaternions | built |
+
+| 3 | Complex Taylor models; contour integrals; argument principle and zero isolation | built |
+
+| 4 | Residues, Laurent series, singularities, real integrals by residues | built |
+
+| 5 | Möbius and conformal maps; graphics hooks | built (pictures in graphics) |
+
+| 6 | Complex gamma and zeta | built |
+
+It builds on Core and on [analytic](https://ratmath.com/analytic/), whose certified real exp, log, sine, cosine and arctangent are the only transcendental ingredients.
+
+### Try it
+
+```js
+// Euler's identity, as far as it can be known: exp(iπ) with π enclosed.
+const pi = [new Rational("3.14159265358979"), new Rational("3.14159265358980")];
+PRINT("exp(i·[π]) =", exp(rect([0, 0], pi)).toString());
+
+// (3 + 4i)/5 is on the unit circle, so every power of it is too, exactly.
+const z = complex("3/5 + 4/5i");
+PRINT("z^10 =", z.pow(10).toString(), "  |z^10|² =", z.pow(10).norm().toString());
+
+// A function on its cut tells you so.
+PRINT("sqrt(-4)  →", sqrt("-4").toString());
+PRINT("asin(2)   →", asin("2").toString());
+
+// i^i is real
+PRINT("i^i =", pow("i", "i").toString());
+
+// The doubling ladder: what each level gives up
+for (const level of [1, 2, 3, 4]) {
+  const p = cayleyDickson(level).properties();
+  PRINT(p.name.padEnd(16), "commutative:", p.commutative, " associative:", p.associative, " zero divisors:", p.zeroDivisors ? p.zeroDivisors.join(" times ") + " = 0" : "none");
+}
+
+// A contour integral, a count of zeros, and the first zero of zeta
+PRINT("∮ dz/z round the unit circle =", contourIntegral("1/z", Contour.circle(0, 1)).toString());
+PRINT("solutions of e^z = 3z with |z| < 2:", countZeros("exp(z) - 3z", Contour.circle(0, 2)));
+const first = zetaZeros(14, 15).zeros[0];
+PRINT("first zero of ζ:", first.enclosure.toString(18), "  proved on the critical line:", first.onCriticalLine);
+zeta(2).toString(18)
+```
+
+---
+
+Page: https://ratmath.com/complex/reference.html
+
+Reference
+
+## Everything in the library
+
+Every export of `@ratmath/complex` and of `@ratmath/complex/cayley`. Anything called `z` below is a `Complex`, text, a pair or a real number, and for the functions also a `Rect` or a `Disc`. `bits` is the precision in binary digits and defaults to 64.
+
+### Complex rationals
+
+| Export | What it does |
+
+| complex(re, im) | A Complex from text ("3 - 4i", "(1 + i)^8"), two parts, a [re, im] pair or a real number in any form Core reads. |
+
+| Complex | .re, .im (Core Rationals); add sub mul div neg conj inv pow(n) scale(q); norm() = \|z\|²; exactModulus() and exactSqrt() (null when irrational); equals isZero isReal isImaginary isGaussianInteger; toString toTeX toJSON toNumbers. Complex.parse(text), Complex.from(x), Complex.ZERO ONE I. |
+
+| CQ | The field Q(i) as a RatMath field object, for linalg and structures. |
+
+| ComplexError | Thrown with a code: division-by-zero, branch-cut, branch-point, pole, precision, bad-option, bad-argument, singularity, zero-on-contour, unsupported; and from the cayley entry point no-quotient, not-a-rotation, too-large. |
+
+### Enclosures
+
+| Export | What it does |
+
+| rect(a, b) | rect("1 + 2i") a point; rect([0, 1], [2, 3]) the rectangle [0,1] + i[2,3]; rect(z, radius) the square around z. |
+
+| Rect | .re, .im as { lo, hi }; .real, .imag as Core RationalIntervals; center width height size isPoint; add sub mul div inv neg conj scale timesI pow; contains intersects intersect hull containsZero; corners() split() round(bits) toDisc() normRange(); toString(digits) toJSON(). Rect.from(x), Rect.hull(...items). |
+
+| disc(center, radius) | The closed disc with rational centre and radius. |
+
+| Disc | .center, .radius; add sub mul div inv neg conj scale; contains intersects hull containsZero (decided exactly); toRect(). |
+
+### Polar form
+
+| Export | What it does |
+
+| polar(z, bits) | { modulus, argument, normSquared, exactModulus, exactTurn } for an exact z; the first two are Core RationalIntervals. |
+
+| modulus(z, bits) | \|z\| as a RationalInterval; also for a rectangle or disc. |
+
+| argument(z, bits) | The principal argument in (−π, π] as a RationalInterval. |
+
+| arg(z, options) | The argument as a Branched result, for inputs that may lie across the negative real axis. |
+
+| exactTurn(z) | The angle as a fraction of a full turn when that is rational (a multiple of 1/8), else null. |
+
+| fromPolar(r, theta, bits) | A Rect around reiθ. theta in radians, or { turns: q }. |
+
+| rootsOfUnity(n, bits) | The n-th roots of unity, counter-clockwise from 1; the rational ones exact. |
+
+| roots(z, n, bits) | All n values of the n-th root of an exact z. |
+
+### Functions
+
+| Export | What it does |
+
+| exp sin cos tan sinh cosh tanh | f(z, bits) or f(z, { bits }) returns a Rect. z is exact, a Rect or a Disc. tan and tanh refuse an enclosure that may contain a pole. |
+
+| log(z, options) | A Branched. Cut: the negative real axis. Options { bits, branch: k, side: "above" \| "below" }; branch k adds 2πik. |
+
+| sqrt(z, options), root(z, n, options) | A Branched; exact when the square root is a complex rational. Branch k multiplies by e2πik/n. |
+
+| pow(z, w, options) | zw. Exact for a whole-number w and exact z; a rational w goes through root; otherwise ewlogz. |
+
+| asin acos atanh | Branched; cut on the real axis outside [−1, 1]; sides above, below. |
+
+| atan asinh | Branched; cut on the imaginary axis outside [−i, i]; sides right, left. |
+
+| acosh | Branched; cut on the real axis left of 1; sides above, below. |
+
+| Branched | value (Rect or null), straddles, cut, candidates ([{ side, value }]), convention ({ side, value } for an exact point on the cut, else null), branch; getters rect (throws on the cut) and hull. |
+
+| continueAlong(fn, path, options) | Carry "log", { root: n } or { pow: w } along a polygonal path of exact points: { value, turns, branch, values }. Options bits, branch, about. |
+
+| winding(path, w) | The winding number of a closed polygon about w (default 0), exact. |
+
+| refined(name, z, options) | A Core Refinement: .quick at once, .exact() certified. |
+
+| plan | The phases still to come. |
+
+### Möbius maps and the Riemann sphere
+
+| Export | What it does |
+
+| mobius(a, b, c, d), mobiusFrom(from, to), Mobius | z ↦ (az + b)/(cz + d), exactly: apply, compose, inverse, equals, classify, fixedPoints, isSphereRotation. See Möbius maps. |
+
+| infinity, isInfinity | The point at infinity. |
+
+| crossRatio, concyclic | The invariant of four points; the exact test for lying on one circle or line. |
+
+| circle(c, r2), lineThrough, circleThrough, GCircle | Circles and lines as Hermitian forms, mapped exactly by map(T). |
+
+| toSphere, fromSphere, chordal2 | Stereographic projection, exact. See The Riemann sphere. |
+
+| cayley, halfPlaneToDisc, discAutomorphism, joukowski, regions | Conformal maps of the standard regions. |
+
+| gridImage, sampleGrid | Data for pictures: exact image circles of a grid; sampled values (estimated). |
+
+### Taylor models
+
+| Export | What it does |
+
+| taylorModel(f, disc, opts) | The model of f on a disc: a polynomial and a proven bound on ∣f−P∣ there. f is text in z or a function of one model. Options order (12), bits (96). Refuses (division-by-zero, branch-point, branch-cut, precision) when a hypothesis cannot be shown. |
+
+| CTM | CTM.z(disc, opts), CTM.constant(disc, value, opts); add sub mul div neg inv pow(n) scale(q); .center .radius .order .bits .disc .error .coefficients; at(z) (Rect), range() (Disc), zeroCount(), derivative(radius), integral(a, b), toString(). The package's exp log sqrt root pow sin cos tan sinh cosh tanh gamma rgamma logGamma zeta accept a model and return one. |
+
+### Contours, integrals, zeros
+
+| Export | What it does |
+
+| Contour | Contour.path(points), polygon(points), rectangle(rect), circle(center, radius, { clockwise }), arc(center, from, to, { clockwise }), from(x); .pieces .start .end .closed; join(other) reversed() winding(w) sample(perPiece). |
+
+| contourIntegral(f, contour, opts) | A Rect certain to contain the integral. Options tolerance (2⁻⁴⁰), order, bits, maxDepth, maxPieces. Refuses with singularity when f cannot be bounded somewhere on the contour. |
+
+| residueSum(f, contour, opts) | The integral round a closed contour over 2πi. |
+
+| argumentPrinciple(f, contour, opts), countZeros | The winding number of f(contour) round 0, a proven whole number: zeros minus poles inside. Refuses with zero-on-contour. |
+
+| zeros(f, rect, opts) | { zeros: [{ enclosure, multiplicity, simple, isolating, boundary }], count, complete, unresolved }. Options bits (64), tolerance (2⁻²⁰), order, modelBits, maxCells. |
+
+### Residues and real integrals
+
+| Export | What it does |
+
+| laurent(f, center, radius, { from, to }) | Laurent coefficients for the annulus holding the circle: coefficient(n), coefficients, principalPart, toString(). |
+
+| residue(f, point, { radius }) | The residue at an exact point or an enclosure, a Rect. For text the circle is checked to hold no other zero of the denominator. |
+
+| singularities(f, rect, opts) | For a formula as text: { singularities: [{ enclosure, kind, order, note }], complete, unresolved, numerator, denominator } with kind "pole", "removable", "essential", "branch point" or "undetermined". |
+
+| realLineIntegral(f, { fourier, bits, variable }) | ∫ P/Q over the real line (times e^(iax) with fourier: a) by residues: { value, real, cos, sin, poles, steps }. |
+
+| trigIntegral(f, { bits, variable }) | ∫₀^2π of a rational function of cos t and sin t: { value, real, poles, steps }. |
+
+### Gamma and zeta
+
+| Export | What it does |
+
+| gamma(z, opts), rgamma(z, opts), logGamma(z, opts) | Γ(z), the entire 1/Γ(z), and log Γ(z) for Re z > 0 (the branch real on the positive axis). A point, Rect or Disc gives a Rect; a model gives a model. gamma refuses with pole at 0, −1, −2, … |
+
+| zeta(s, opts), zetaTimesSMinus1(s, opts) | ζ(s), and the entire (s − 1)ζ(s). zeta refuses with pole at 1. |
+
+| zetaZeros(t1, t2, opts) | The zeros of ζ with t1
+| Export | What it does |
+
+| quaternions, octonions, sedenions | The algebras of dimension 4, 8 and 16 over the rationals. |
+
+| cayleyDickson(level, field) | The algebra of dimension 2level (level 0 to 8) over a field object, the rationals by default. |
+
+| CayleyDickson | level dim name labels field zero one units; basis(i), of(...coefficients), parse(text), properties() → { commutative, associative, alternative, flexible, composition, zeroDivisors }. |
+
+| quaternion(w, x, y, z), octonion(...c) | Elements from coordinates or text ("1 + 2i - k", "e1 + 2 e7"). |
+
+| Hyper | An element: .coeffs, .algebra, .real, .imaginary; add sub mul neg scale conj norm inv pow rightDivide leftDivide commutator associator equals isZero. |
+
+| QQ | The rationals as a field object. |
+
+### @ratmath/complex/cayley: rotations
+
+| Export | What it does |
+
+| rotate(q, v) | The vector part of qvq−1, as three Rationals. |
+
+| rotationMatrix(q) | The 3×3 rotation matrix as rows of Rationals. q need not have norm 1. |
+
+| fromRotationMatrix(M) | The primitive quaternion of a rational rotation matrix; refuses a matrix that is not a rotation. |
+
+| fromAxis(axis, t) | 1+t⋅axis: for a unit axis, t is the tangent of half the angle. |
+
+| rotationOf(q) | { axis, cos, tanHalfSquared }, exact. |
+
+| primitive(q) | The same rotation with whole-number coordinates sharing no factor, the first nonzero one positive. |
+
+| interpolate(q0, q1, t) | (1−t)q0​+tq1​ the shorter way round: an exact rotation on the arc between them. |
+
+### @ratmath/complex/cayley: integer quaternions
+
+| Export | What it does |
+
+| hurwitz(a, b, c, d) | A Hurwitz from coordinates that are all whole numbers or all halves of odd numbers, or from a quaternion. |
+
+| Hurwitz | add sub mul neg conj equals isZero; norm() (BigInt); divmod(b) → { quotient, remainder } with this = quotient·b + remainder; isLipschitz, toIntegers(), toQuaternion(). The constructor takes doubled coordinates. |
+
+| hurwitzUnits() | The 24 units. |
+
+| hurwitzGcd(a, b) | A right greatest common divisor. |
+
+| quaternionOfNorm(p) | A Lipschitz quaternion of norm p, for a prime p. |
+
+| fourSquares(n) | Four BigInts, largest first, whose squares add to n. |
+
+| fourSquaresCount(n) | The number of ordered, signed representations of n as four squares (Jacobi). |
+
+### Try it
+
+```js
+// One of each.
+const z = complex("3 + 4i");
+PRINT("complex   ", z.toString(), " norm", z.norm().toString(), " sqrt", z.exactSqrt()[0].toString());
+PRINT("rect      ", rect("1 + i", "1/10").mul(rect("2 - i", "1/10")).toString());
+PRINT("disc      ", disc("1 + i", "1/10").inv().toString());
+PRINT("polar     ", polar(z).exactModulus.toString(), "at", argument(z, 30).low.toNumber().toFixed(8), "rad");
+PRINT("exp       ", exp(z, 80).toString(20));
+PRINT("log       ", log(z).toString());
+PRINT("log(-1)   ", log(-1).toString(6));
+PRINT("root      ", root("-8", 3, { branch: 1, side: "above" }).toString(6), " (the real cube root of -8 is branch 1)");
+PRINT("pow       ", pow("2", "1/2", 100).toString(25));
+PRINT("asin      ", asin("1/2 + i").toString());
+PRINT("continue  ", continueAlong("log", ["1", "i", "-1", "-i", "1"]).turns, "turn");
+PRINT("winding   ", winding(["1", "i", "-1", "-i"]));
+PRINT("quaternion", quaternion(1, 2, 3, 4).inv().toString());
+PRINT("rotate    ", rotate("1 + i + j + k", [1, 2, 3]).join(", "));
+PRINT("hurwitz   ", hurwitz(7, 3, -2, 5).divmod(hurwitz(2, 1, 1, 0)).remainder.toString());
+PRINT("4 squares ", fourSquares(2026).join(", "));
+Object.keys(octonions.properties())
+```
+
+---
+
+Page: https://ratmath.com/complex/explore.html
+
+Explore
+
+## Explore
+
+Type complex numbers and see what is exact, what is enclosed, and what happens on a branch cut. Further down: roots drawn in the plane, rotations by quaternions, Möbius maps, the zeros and poles of a function found with proof, and sums of four squares.
+
+### Two numbers
+
+zw
+
+### A function of z
+
+Function
+Uncertainty ±
+Bits
+
+The function is applied to the z above. Give an uncertainty to turn z into a square of that half-width and watch the answer widen, or lie across a cut. Try the chips: each one sets z and a function at an interesting place.
+
+### All the roots
+
+nthe n-th roots of z, with the principal one marked
+
+### A rotation
+
+QuaternionVector
+
+### A Möbius map
+
+Sendto
+
+Three points separated by semicolons, ∞ allowed. The picture shows where the lines Re z = −2, −3/2, …, 2 and Im z = −2, …, 2 go: each image is an exact circle or line.
+
+### Zeros and poles in a rectangle
+
+f(z)
+
+Re from, toIm from, to
+
+Every zero in the rectangle is isolated and proved: a filled dot is one simple zero, a ring is a zero of higher order with its order beside it, a cross is a pole. The count is checked a second way, by the argument principle on the boundary. See [Zeros and the argument principle](https://ratmath.com/complex/zeros.html) and [Residues](https://ratmath.com/complex/residues.html).
+
+### Four squares
+
+Whole number
+
+### Try it
+
+```js
+// The page above, as code.
+const z = complex("3 + 4i"), w = complex("1 - 2i");
+PRINT("z·w =", z.mul(w).toString(), "  z/w =", z.div(w).toString(), "  |z| =", String(z.exactModulus()));
+PRINT("log z =", log(z).toString());
+PRINT("log of a square around -2:", log(rect("-2", "1/100")).toString(6));
+PRINT("fifth roots of z:");
+for (const r of roots(z, 5)) PRINT("   ", r.toString(10));
+PRINT("rotate (1, 2, 3) by 1 + i + j + k:", rotate("1 + i + j + k", [1, 2, 3]).join(", "));
+PRINT("zeros of exp(z) − 3z:", zeros("exp(z) - 3z", rect([-1, 3], [-2, 2])).zeros.map((z) => z.enclosure.toString(12)).join("  and  "));
+fourSquares(2026)
+```
+
+---
+
+Page: https://ratmath.com/complex/numbers.html
+
+Complex rationals
+
+## Complex rationals
+
+A complex rational is a+bi with a and b fractions. They are closed under the four operations, so arithmetic on them is exact, with no rounding anywhere.
+
+### Writing one
+
+```js
+import { complex, Complex } from "@ratmath/complex";
+
+complex("3 - 4i");               // from text
+complex(3, -4);                  // from two parts, each anything Core reads
+complex(["1/2", "0.#3"]);        // 1/2 + 1/3 i
+complex("(1 + 2i)/(3 - i)");     // text may be an expression: 1/10 + 7/10i
+complex("(1 + i)^8");            // 16
+complex(0.1);                    // 1/10: a decimal number means the decimal it prints as
+```
+
+Text is exact arithmetic on numbers in Core's notation (`1/2`, `0.25`, `0.#3` for a repeating decimal, `1..1/2` for a mixed number), the letter `i`, `+ - * /`, `^` with a whole-number exponent, and parentheses. `3/4i` reads as 43​i, the way it is written by hand.
+
+### Arithmetic
+
+```js
+const z = complex("3 + 4i");
+String(z.add("1 - i"));      // "4 + 3i"
+String(z.mul("1/2 + i"));    // "-5/2 + 5i"
+String(z.div("1 - 2i"));     // "-1 + 2i"
+String(z.inv());             // "3/25 - 4/25i"
+String(z.pow(-2));           // "-7/625 - 24/625i"
+String(z.conj());            // "3 - 4i"
+String(z.norm());            // "25": |z|², always rational
+String(z.exactModulus());    // "5": |z| when it is rational, else null
+z.equals("3 + 4i");          // true: equality is exact
+```
+
+Every method takes its argument in any of the forms `complex` reads. The parts are Core `Rational`s at `z.re` and `z.im`. Division by zero throws a `ComplexError` with `code: "division-by-zero"`.
+
+### Why the norm and not the modulus
+
+The modulus ∣z∣=a2+b2​ is usually irrational: ∣1+i∣=2​. Its square, the norm N(z)=zzˉ=a2+b2, is always rational and is multiplicative, N(zw)=N(z)N(w). So the exact layer works with the norm, and the modulus is an enclosure (see [Polar form](https://ratmath.com/complex/polar.html)) except when it happens to be rational, which is exactly when (a,b,∣z∣) is a rational Pythagorean triple.
+
+### Exact square roots
+
+Writing w=x+iy with w2=a+bi gives x2=(∣z∣+a)/2 and y2=(∣z∣−a)/2, with the sign of y that of b. So z​ is a complex rational exactly when ∣z∣ is rational and both of those are squares of rationals:
+
+```js
+complex("3 + 4i").exactSqrt().map(String);    // ["2 + i", "-2 - i"]
+complex("-5 - 12i").exactSqrt().map(String);  // ["2 - 3i", "-2 + 3i"]
+complex("-4").exactSqrt().map(String);        // ["2i", "-2i"]
+complex("2").exactSqrt();                     // null: use sqrt() for an enclosure
+```
+
+### As a field
+
+`CQ` is the field Q(i) as a RatMath field object (`add`, `mul`, `inv`, `zero`, `one` and the rest), which is what [linalg](https://ratmath.com/linalg/) matrices and [structures](https://ratmath.com/structures/) polynomials take when their entries are complex. Its `sign` is 0 for zero and 1 otherwise, because the complex numbers cannot be ordered: if i were positive or negative, i2=−1 would be positive.
+
+### Try it
+
+```js
+// Gaussian rationals on the unit circle come from Pythagorean triples:
+// (m + ni)² / (m² + n²) has modulus exactly 1.
+const onCircle = (m, n) => complex(m, n).pow(2).scale(new Rational(1, m * m + n * n));
+for (const [m, n] of [[2, 1], [3, 2], [4, 1], [5, 2]]) {
+  const z = onCircle(m, n);
+  PRINT(`(${m} + ${n}i)²/${m * m + n * n} = ${z}`, "  norm", z.norm().toString());
+}
+
+// Their products are again on the circle: rotations with no rounding, ever.
+let w = complex(1);
+for (let k = 0; k < 6; k++) w = w.mul(onCircle(2, 1));
+PRINT("six of the first in a row:", w.toString(), "  norm", w.norm().toString());
+
+// Exact roots, when there are some
+for (const t of ["3 + 4i", "-5 - 12i", "5 + 12i", "2i", "1 + i"]) {
+  const r = complex(t).exactSqrt();
+  PRINT(`sqrt(${t}) =`, r ? r[0].toString() : "not a complex rational");
+}
+
+// The field object, as linalg would use it
+CQ.format(CQ.div(CQ.from("1 + i"), CQ.from("1 - i")))
+```
+
+---
+
+Page: https://ratmath.com/complex/enclosures.html
+
+Rectangles and discs
+
+## Rectangles and discs
+
+Most complex numbers worth computing are not rational. An enclosure is a set with rational data that is proven to contain the number: a rectangle with sides along the axes, or a disc. Arithmetic on enclosures gives enclosures of every possible result.
+
+### Rectangles
+
+A `Rect` is a real interval for the real part and another for the imaginary part.
+
+```js
+import { rect, Rect } from "@ratmath/complex";
+
+rect([1, 2], [0, 1]);        // [1, 2] + i[0, 1]
+rect("1 + i", "1/10");       // the square of half-width 1/10 around 1 + i
+rect("3 - 4i");              // a single point
+
+const r = rect("1 + i", "1/10");
+String(r);                   // "1 + 1i ± 1e-1": the midpoint, then the half-size
+String(r.center);            // "1 + i"
+r.contains("21/20 + 19/20i");    // true
+r.real;                      // a Core RationalInterval; r.imag too
+r.corners();                 // four Complex values
+r.split();                   // four quarters
+```
+
+The operations are `add sub mul div inv neg conj scale pow`, and `hull`, `intersect`, `contains`, `intersects` for sets. Each returns a rectangle containing z∘w for every z in the first and w in the second:
+
+([a]+i[b])([c]+i[d])=([a][c]−[b][d])+i([a][d]+[b][c])
+with real interval arithmetic on the right. Division multiplies by wˉ/∣w∣2 and refuses (code `division-by-zero`) when the divisor contains 0.
+
+### Reading a printed rectangle
+
+A point prints exactly. Anything wider prints its midpoint to the digits asked for and then `±` the half-size, so `1.4686939399 + 2.2873552872i ± 1.7e-21` means both parts are within 1.7×10−21 of an exact rational midpoint whose leading digits are shown. `toString(40)` shows forty digits; `toJSON()` gives the four exact corners.
+
+### Discs
+
+A `Disc` is a rational centre and a rational radius.
+
+```js
+import { disc } from "@ratmath/complex";
+
+const d = disc("1 + i", "1/10");
+String(d.mul(disc("2", "1/10")));   // "disc(2 + 2i, 0.35142135624)"
+String(disc("2", 1).inv());         // "disc(2/3, 0.33333333333)": exactly centre 2/3, radius 1/3
+disc(0, 1).contains("3/5 + 4/5i");  // true, decided exactly
+d.toRect();  r.toDisc();            // each contains the other shape
+```
+
+Two facts make discs pleasant. Inclusion and intersection are decided exactly from ∣c1​−c2​∣2 with no square roots, and the image of a disc under z↦1/z is again a disc, exactly:
+
+D(c,r)1​=D(∣c∣2−r2cˉ​, ∣c∣2−r2r​)(∣c∣>r).
+A product uses ∣zw−c1​c2​∣≤∣c1​∣r2​+∣c2​∣r1​+r1​r2​, with the moduli rounded upward.
+
+### Which to use
+
+Rectangles fit the functions: ez, sinz and logz separate into real functions of x and y, so their images of a rectangle are easy to bound tightly. That is why the functions in this package return rectangles. Discs fit multiplication: multiplying by a number of modulus 1 turns a disc without growing it, while a rectangle must be redrawn around its turned self and grows by up to 2​ each time. The box at the end of this page shows a rectangle growing thousands of times over in twenty multiplications, while the disc grows only as much as twenty-one uncertain factors must.
+
+### Functions of an enclosure
+
+Every function in [Functions](https://ratmath.com/complex/functions.html) takes a rectangle or a disc as well as an exact number. The output then contains the value at every point of the input, so an uncertain measurement can be carried through a calculation and the uncertainty of the result read off at the end.
+
+### Try it
+
+```js
+// Multiply by a point near the unit circle twenty times, as a rectangle and as a disc.
+const start = "3/5 + 4/5i";
+let r = rect(start, "1/1000"), d = disc(start, "1/1000");
+const r0 = r, d0 = d;
+for (let k = 1; k <= 20; k++) {
+  r = r.mul(r0).round(60);
+  d = d.mul(d0);
+  if (k % 5 === 0) PRINT(`after ${k}:  rectangle size ${r.size.toNumber().toExponential(2)}   disc diameter ${(2 * d.radius.toNumber()).toExponential(2)}`);
+}
+// Both still contain the exact answer.
+const exact = complex(start).pow(21);
+PRINT("exact answer inside both:", r.contains(exact), d.contains(exact));
+
+// 1/z of a disc is a disc; of a rectangle, only something bigger.
+PRINT("1/disc(2, 1) =", disc("2", 1).inv().toString());
+PRINT("1/rect(2 ± 1) =", rect("2", 1).inv().toString());
+
+// An uncertain input through a function
+const z = rect("1 + i", "1/100");
+PRINT("sin of", z.toString(), "is in", sin(z).toString());
+sin(z).contains(sin("1 + i"))
+```
+
+---
+
+Page: https://ratmath.com/complex/polar.html
+
+Polar form
+
+## Polar form
+
+Every nonzero complex number is reiθ with r=∣z∣>0 and an angle θ. For a complex rational both are usually irrational, so they come as enclosures, with the exact facts alongside.
+
+### Modulus and argument
+
+```js
+import { polar, modulus, argument, exactTurn, fromPolar } from "@ratmath/complex";
+
+const p = polar("3 + 4i");
+p.modulus;        // a Core RationalInterval: here the single point 5
+p.argument;       // an interval around 0.9272952180…, width below 1e-19
+p.exactModulus;   // Rational 5 (null when |z| is irrational)
+p.normSquared;    // Rational 25
+p.exactTurn;      // null: the angle is not a rational part of a turn
+
+polar("1 + i").exactTurn;       // Rational 1/8
+polar("1 + i").exactModulus;    // null: it is √2
+modulus("1 + i", 200);          // √2 to 200 bits
+argument("-1 - i");             // around −3π/4: principal values lie in (−π, π]
+```
+
+The argument is computed from an arctangent of y/x or of x/y, whichever is at most 1 in size, which keeps the series fast near the imaginary axis as well as near the real one.
+
+### When the angle is exact
+
+The angle of a complex rational is a rational fraction of a full turn only on the axes and the two diagonals. That is Niven's theorem in another form: if θ/2π is rational and tanθ is rational, then tanθ is 0, ±1 or undefined. So `exactTurn` returns a multiple of 1/8 or `null`, and nothing is lost by the short list.
+
+```js
+String(exactTurn("-1 + i"));   // "3/8"
+String(exactTurn("-5"));       // "1/2"
+exactTurn("1 + 2i");           // null
+```
+
+### Back from polar form
+
+`fromPolar(r, θ)` returns a rectangle around reiθ. The angle is in radians, as a rational or an interval; or `{ turns: q }` for the exact angle 2πq, which gives exact points on the axes.
+
+```js
+String(fromPolar(2, { turns: "1/4" }));   // "2i", exactly
+String(fromPolar(2, { turns: "1/8" }));   // "1.41421356237 + 1.41421356237i ± 8.5e-22"
+String(fromPolar(1, "1/2"));              // e^(i/2): "0.87758256189 + 0.4794255386i ± 4.2e-22"
+fromPolar(5, argument("3 + 4i")).contains("3 + 4i");   // true
+```
+
+### Roots of unity and all the roots of a number
+
+The n-th roots of unity are e2πik/n for k=0,…,n−1: the corners of a regular n-gon. The four that are complex rationals (1,i,−1,−i) come back as exact points. Every nonzero number has n distinct n-th roots: one of them times each root of unity.
+
+```js
+import { rootsOfUnity, roots } from "@ratmath/complex";
+
+rootsOfUnity(6).map(String);
+// ["1", "0.5 + 0.86602540378i ± 6.4e-22", "-0.5 + 0.86602540378i ± 6.4e-22", "-1", …]
+roots("-8", 3).map(String);
+// ["1 + 1.73205080757i ± 1.3e-21", "-2 + 0i ± 2.5e-21", "1 - 1.73205080757i ± 1.3e-21"]
+```
+
+Notice that the first cube root of −8 listed is 1+3​i, not −2. The principal root is the one with the smallest angle, and for a negative number that is not the real one. [Branches](https://ratmath.com/complex/branches.html) has more on this.
+
+### Try it
+
+```js
+// Polar form of a few numbers, with what is known exactly.
+for (const t of ["3 + 4i", "1 + i", "-2", "-1 - i", "5 - 12i", "2 + i"]) {
+  const p = polar(t, 40);
+  PRINT(t.padEnd(8),
+    "|z| =", p.exactModulus ? p.exactModulus.toString() : `√${p.normSquared} ≈ ${p.modulus.low.toNumber().toFixed(10)}`,
+    "  angle:", p.exactTurn ? `${p.exactTurn} of a turn` : `${p.argument.low.toNumber().toFixed(10)} rad`);
+}
+
+// De Moivre: the 12th power of a point on the circle at 1/8 of a turn is at 12/8 = 1/2 turn (mod 1).
+const w = fromPolar(1, { turns: "1/8" });
+PRINT("w^12 =", w.pow(12).toString(), " contains -1:", w.pow(12).contains(-1));
+
+// The fifth roots of unity add up to 0, and the enclosure of the sum shows it.
+const fifth = rootsOfUnity(5);
+const sum = fifth.reduce((a, b) => a.add(b));
+PRINT("sum of the 5th roots of unity:", sum.toString(), " contains 0:", sum.contains(0));
+
+// All four fourth roots of -4 are complex integers: ±1 ± i.
+roots("-4", 4, 40).map((r) => r.toString(6))
+```
+
+---
+
+Page: https://ratmath.com/complex/functions.html
+
+Functions
+
+## Elementary functions
+
+ez, the trigonometric and the hyperbolic functions of a complex number, enclosed in a rectangle at whatever precision you ask for. These are single-valued. The ones with branch cuts (logarithm, roots, powers, inverses) are on the [next page](https://ratmath.com/complex/branches.html).
+
+### Calling them
+
+```js
+import { exp, sin, cos, tan, sinh, cosh, tanh, rect } from "@ratmath/complex";
+
+String(exp("1 + i"));        // "1.4686939399 + 2.2873552872i ± 1.7e-21"
+String(sin("1 + i"));        // "1.29845758142 + 0.63496391478i ± 8.5e-22"
+String(cos("i"));            // "1.54308063482 + 0i ± 8.5e-22": cosh(1), and the imaginary part encloses 0
+String(tan("1 + i"));        // "0.27175258532 + 1.08392332734i ± 8.5e-22"
+
+exp("1 + i", 200);           // the second argument is the precision in bits (default 64)
+exp("1 + i", { bits: 200 }); // or an options object
+sin(rect("1 + i", "1/100")); // an enclosure in, an enclosure of every value out
+```
+
+The result is a `Rect`. For an exact input its size is about 2−bits relative to the value (the work is done with guard bits and rounded outward at the end). For an input that is itself an enclosure, the size is whatever the input's width forces.
+
+### How they are computed
+
+Each one separates into real functions of the real and imaginary parts, which [analytic](https://ratmath.com/analytic/) encloses rigorously:
+
+ex+iy=excosy+iexsiny
+sin(x+iy)=sinxcoshy+icosxsinhycos(x+iy)=cosxcoshy−isinxsinhy
+The hyperbolic functions are the same ones turned a quarter of the way round: sinhz=−isin(iz) and coshz=cos(iz). The tangents are quotients, tanz=sinz/cosz, and refuse with code `pole` when the enclosure of the denominator contains 0, which is how you learn that an input rectangle may contain a pole.
+
+Because the real intervals for x and y are independent, a rectangle is the natural shape here: the enclosure of ez over a rectangle is the product of an interval for ex with intervals for cosy and siny, with no wasted room beyond what a rectangle around a curved image must have.
+
+### What "certified" means here
+
+The true value is inside the rectangle returned. Always, not with high probability. That lets the output prove things: if two enclosures do not intersect, the numbers are different; if the enclosure of f(z) excludes 0, then f has no zero at z (or anywhere in an input rectangle). It cannot prove equality, since a rectangle that contains 0 says only "possibly zero"; for that see the exact layer in [Complex rationals](https://ratmath.com/complex/numbers.html) or the equality tests in [symbolic](https://ratmath.com/symbolic/).
+
+### Quick first, exact after
+
+`refined(name, z, { bits })` wraps any function as a Core `Refinement`: a fast low-precision value at once (`.quick`), and the certified one when asked (`.exact()`). An interface can show the quick value while a slider moves and sharpen it when the slider stops.
+
+```js
+import { refined } from "@ratmath/complex";
+
+const r = refined("exp", "1 + i", { bits: 300 });
+r.quick.value;    // [1.4686939399158851, 2.2873552871788423] as doubles
+r.quick.trust;    // "good" ("unsure" when the input is on a branch cut)
+r.exact();        // the Rect at 300 bits
+```
+
+### Try it
+
+```js
+// One value at rising precision: the rectangles are nested.
+let previous = null;
+for (const bits of [20, 60, 120, 240]) {
+  const v = exp("1 + i", bits);
+  PRINT(`${String(bits).padStart(3)} bits:`, v.toString(Math.floor(bits / 3.4)), previous ? `  inside the last: ${previous.contains(v)}` : "");
+  previous = v;
+}
+
+// sin² + cos² = 1 holds as an enclosure at a complex point
+const z = complex("2 - 3i");
+const one = sin(z).pow(2).add(cos(z).pow(2));
+PRINT("sin² + cos² at", z.toString(), "=", one.toString(), " contains 1:", one.contains(1));
+
+// Euler's formula
+PRINT("exp(iz)       =", exp(z.mul("i")).toString());
+PRINT("cos z + i sin z =", cos(z).add(sin(z).timesI()).toString());
+
+// Proving a function has no zero in a region: cos has none in this square.
+const box = rect("1/2 + i", "1/4");
+PRINT("cos over the box:", cos(box).toString(), " may be zero:", cos(box).containsZero());
+
+// A rectangle that may contain a pole of tan is refused.
+try { tan(rect([1, 2], [-1, 1])); } catch (e) { PRINT(e.code + ":", e.message); }
+tan(rect("1 + i", "1/10")).toString()
+```
+
+---
+
+Page: https://ratmath.com/complex/branches.html
+
+Branches
+
+## Branches and cuts
+
+The logarithm, roots, powers and the inverse trigonometric functions have many values. Choosing one everywhere forces a jump along a curve, the branch cut. This package tells you when an input is on a cut, gives the value on each side, and can follow a branch continuously along a path.
+
+### The logarithm
+
+ew=z has the solutions w=log∣z∣+i(θ+2πk) for every whole number k. The principal one takes θ in (−π,π]. It is continuous everywhere except across the negative real axis, where its imaginary part jumps from π (just above) to −π (just below).
+
+```js
+import { log, rect } from "@ratmath/complex";
+
+const a = log("1 + i");
+String(a);            // "0.34657359028 + 0.7853981634i ± 4.2e-22"
+a.value;              // the Rect
+a.straddles;          // false
+
+const b = log("-1");
+b.straddles;          // true: the input is on the cut
+b.value;              // null
+b.candidates;         // [{ side: "above", value: Rect }, { side: "below", value: Rect }]
+b.convention.side;    // "above": what the usual convention picks for a point exactly on the cut
+String(b);
+// on the cut (the negative real axis).  above: 0 + 3.1415926536i ± 1.7e-21;
+// below: 0 - 3.1415926536i ± 1.7e-21.  Convention: above
+
+String(log("-1", { side: "below" }));   // "0 - 3.1415926536i ± 1.7e-21"
+String(log("i", { branch: 1 }));        // "0 + 7.853981634i ± 3.4e-21  (branch 1)": adds 2πi
+```
+
+Every function on this page returns a `Branched` result with these fields. `.rect` is the value when there is one and otherwise throws a `ComplexError` (code `branch-cut`) that names the sides to choose from, so code that never expects a cut fails loudly instead of quietly using the wrong value. `.hull` is a rectangle around every candidate.
+
+### Why report instead of choosing
+
+For the exact point −1 there is a convention, and it is reported. The real trouble is an uncertain input. Suppose a calculation gives z=−2 with an error of 10−10 in each part. Is logz near iπ or near −iπ? The enclosure of z lies across the cut, the true z could be on either side, and the two answers differ by 2πi. Floating-point arithmetic picks whichever side the rounding error happened to land on. Here the result says `straddles: true`, gives both candidates, and has no convention, because none would be honest:
+
+```js
+const c = log(rect("-2", "1/10"));
+c.straddles;       // true
+c.convention;      // null
+c.candidates.map((x) => `${x.side}: ${x.value}`);
+// ["above: 0.69246186711 + 3.11530112278i ± 5.1e-2", "below: 0.69246186711 - 3.11530112278i ± 5.1e-2"]
+```
+
+Each candidate is the function continued from that side over the whole input, so if you know from elsewhere which side the true value is on, `{ side }` gives a correct enclosure.
+
+### Roots and powers
+
+The principal n-th root is e(logz)/n with the principal logarithm, so it has the same cut and its angle lies in (−π/n,π/n]. `{ branch: k }` multiplies by e2πik/n. A square root that is a complex rational is returned exactly.
+
+```js
+import { sqrt, root, pow } from "@ratmath/complex";
+
+String(sqrt("3 + 4i"));                 // "2 + i"
+String(sqrt("-4"));                     // on the cut.  above: 2i;  below: -2i.  Convention: above
+String(sqrt("-4", { side: "below" }));  // "-2i"
+String(root("-8", 3));                  // on the cut: 1 + 1.732…i above, 1 − 1.732…i below
+String(pow("i", "i"));                  // "0.20787957635 + 0i ± 1.1e-22": e^(−π/2)
+String(pow("1 + i", 10).value);         // "32i": whole-number powers of exact numbers are exact
+```
+
+The principal cube root of −8 is not −2. The real cube root is branch 1 of the three; a real-number calculator picks it because it never leaves the real line. `roots(z, n)` returns all n.
+
+zw=ewlogz inherits the logarithm's cut and its branches. A whole-number exponent has no cut at all, and a rational exponent p/q is computed as the q-th root to the power p, so that exact roots stay exact.
+
+### Inverse functions
+
+Each is defined by a formula in logarithms and square roots, and its cuts come from theirs:
+
+| Function | Formula | Cut | Sides |
+
+| asin | −ilog(iz+1−z​1+z​) | the real axis outside [−1,1] | above, below |
+
+| acos | π/2−arcsinz | the same | above, below |
+
+| atan | −iatanh(iz) | the imaginary axis outside [−i,i] | right, left |
+
+| asinh | −iarcsin(iz) | the imaginary axis outside [−i,i] | right, left |
+
+| acosh | log(z+z−1​z+1​) | the real axis left of 1 | above, below |
+
+| atanh | 21​(log(1+z)−log(1−z)) | the real axis outside [−1,1] | above, below |
+
+So `asin("2")` is on a cut. Its two candidates are π/2±1.3169…i, and the convention reported for the exact point is the one the formula gives with principal values, with nothing else decided by hand. Conventions on cuts differ between systems (some use the sign of a floating-point zero to pick the side), which is one more reason the result names the side instead of leaving you to find out.
+
+### Following a branch along a path
+
+A branch can be continued along any path that avoids the branch point: keep the value changing continuously, and when the path crosses the cut, move to the next branch instead of jumping. `continueAlong` does this for a polygonal path of exact points, and the crossings are decided exactly, with no numerical tolerance.
+
+```js
+import { continueAlong, winding } from "@ratmath/complex";
+
+const loop = ["1", "i", "-1", "-i", "1"];        // once round the origin
+const r = continueAlong("log", loop);
+String(r.value);     // "0 + 6.2831853072i ± 3.4e-21": log 1 has become 2πi
+r.turns;             // 1
+r.values;            // the value at every vertex
+
+String(continueAlong({ root: 2 }, loop).value);   // "-1 + 0i ± 4.2e-22": √1 has become −1
+winding(loop);       // 1: the winding number about 0, exact
+winding(["2", "2i", "-2", "-2i"], "1/2");         // about another point
+```
+
+This is the monodromy of the function: going once round the branch point adds 2πi to the logarithm and multiplies an n-th root by e2πi/n. The surface on which these functions become single-valued, the Riemann surface, is exactly the record of how many times you have been round. `{ about: c }` puts the branch point at c instead of 0.
+
+### Try it
+
+```js
+// A measurement of -2 with a small error, through the logarithm.
+const z = rect("-2", "1/1000");
+const l = log(z);
+PRINT("log of", z.toString());
+PRINT("  straddles the cut:", l.straddles, "  convention:", l.convention);
+for (const c of l.candidates) PRINT("  if it is", c.side, "the axis:", c.value.toString());
+
+// Move the same rectangle just off the cut and the question goes away.
+PRINT("log just above:", log(rect("-2 + 1/100i", "1/1000")).toString());
+
+// The six inverses at a point on a cut of each
+for (const [name, f, at] of [["asin", asin, "2"], ["acos", acos, "2"], ["atanh", atanh, "2"], ["atan", atan, "2i"], ["asinh", asinh, "2i"], ["acosh", acosh, "-3"]]) {
+  const r = f(at);
+  PRINT(`${name}(${at})`.padEnd(10), r.candidates.map((c) => `${c.side} ${c.value.toString(6)}`).join("   "), "  convention:", r.convention.side);
+}
+
+// Walk a cube root round the origin three times: it returns only after the third.
+const loop = ["1", "i", "-1", "-i", "1"];
+let path = ["1"];
+for (let turn = 1; turn <= 3; turn++) {
+  path = [...path, ...loop.slice(1)];
+  PRINT(`after ${turn} turn${turn > 1 ? "s" : ""}: 1^(1/3) =`, continueAlong({ root: 3 }, path).value.toString(8));
+}
+winding(path)
+```
+
+---
+
+Page: https://ratmath.com/complex/mobius.html
+
+Topic
+
+## Möbius maps
+
+The maps z ↦ (az + b)/(cz + d) are the conformal bijections of the Riemann sphere. With complex rational coefficients they are exact: rational points go to rational points, circles to circles, and the cross-ratio of four points never changes.
+
+```js
+const T = mobiusFrom([0, 1, infinity], ["i", 1, -1]);   // the one map sending three points to three
+T.apply("1/2");                       // an exact complex rational
+crossRatio(2, "i", 0, infinity);      // -2i
+concyclic(1, "i", -1, "-i");          // true: the cross-ratio is real
+mobius(1, 1, 1, 0).classify();        // "loxodromic"
+circle(0, 1).map(cayley().inverse()); // the line y = 0, exactly
+```
+
+### The maps
+
+A Möbius map is given by a matrix (ac​bd​) with ad−bc=0, and composing maps multiplies matrices. Multiplying the matrix by a number gives the same map, so `equals` compares matrices up to a factor. The point at infinity is `infinity`: −d/c goes there, and it goes to a/c.
+
+Any three distinct points can be sent to any three by exactly one Möbius map. `mobiusFrom` builds it as Sw−1​∘Sz​, where Sz​ sends z1​,z2​,z3​ to 0, 1, ∞ (any of them may be ∞).
+
+### The cross-ratio
+
+(z1​,z2​;z3​,z4​)=(z2​−z3​)(z1​−z4​)(z1​−z3​)(z2​−z4​)​
+is the image of z1​ under the map sending z2​,z3​,z4​ to 1, 0, ∞, and so every Möbius map keeps it. It is real exactly when the four points lie on one circle or line, which makes `concyclic` an exact test.
+
+### What kind of map
+
+The number τ=(a+d)2/(ad−bc) does not change when the matrix is scaled or the map is conjugated, and it decides what the map does near its fixed points:
+
+- parabolic, τ = 4: one fixed point, like z ↦ z + 1;
+
+- elliptic, τ real in [0, 4): a rotation about two fixed points, like z ↦ e^{iθ}z;
+
+- hyperbolic, τ real and greater than 4: a stretch from one fixed point towards the other, like z ↦ 2z;
+
+- loxodromic, otherwise: a stretch and a turn together.
+
+With rational coefficients τ is a complex rational and the test is exact. The fixed points solve cz2+(d−a)z−b=0. When the square root of the discriminant is a complex rational they are exact; otherwise they come back as certified rectangles, such as the golden ratio for z ↦ 1 + 1/z.
+
+### Circles and lines
+
+Write a circle or a line as A∣z∣2+Bˉz+Bzˉ+C=0 with A and C rational and B a complex rational. When A ≠ 0 it is the circle with centre −B/A and radius² (∣B∣2−AC)/A2, and when A = 0 it is a line. The form is a Hermitian matrix H, and a Möbius map M sends it to (M−1)∗HM−1, so the image of a circle is computed exactly, without sampling, and a circle through the pole becomes a line. `circle(c, r2)`, `lineThrough` and `circleThrough` build them, and `contains` tests a point exactly.
+
+| call | returns |
+
+| mobius(a, b, c, d), mobiusFrom(from, to) | Mobius: apply, compose, inverse, equals, det, traceSquared, classify, fixedPoints, isSphereRotation, applyFloat |
+
+| infinity, isInfinity(z) | The point at infinity |
+
+| crossRatio(z1, z2, z3, z4), concyclic(…) | A Complex or infinity; a boolean |
+
+| circle(center, r2), lineThrough(z1, z2), circleThrough(z1, z2, z3) | GCircle: isLine, center, radius2, value, contains, equals, map(T) |
+
+### Try it
+
+```js
+const T = mobiusFrom([0, 1, infinity], ["i", 1, -1]);
+PRINT(String(T), "  kind:", T.classify());
+for (const z of [0, 1, infinity, "1/2", "2 + i"]) PRINT(`  ${String(z)} ↦ ${String(T.apply(z))}`);
+PRINT("cross-ratio (2, i; 0, ∞) =", String(crossRatio(2, "i", 0, infinity)));
+const pts = [0, 1, "1/2", "3/4"].map((t) => { const s = new Rational(t); return complex(s.multiply(s).negate().add(new Rational(1)).divide(s.multiply(s).add(new Rational(1))), new Rational(2).multiply(s).divide(s.multiply(s).add(new Rational(1)))); });
+PRINT("four rational points on the unit circle:", pts.map(String).join(", "), "→ concyclic", concyclic(...pts));
+PRINT("and their images under T, still concyclic:", concyclic(...pts.map((z) => T.apply(z))));
+for (const [name, M] of [["z ↦ 2z", mobius(2, 0, 0, 1)], ["z ↦ iz", mobius("i", 0, 0, 1)], ["z ↦ z + 1", mobius(1, 1, 0, 1)], ["z ↦ 1 + 1/z", mobius(1, 1, 1, 0)]]) {
+  const f = M.fixedPoints();
+  PRINT(`${name}: ${M.classify()}, τ = ${String(M.traceSquared)}, fixed points ${f.points.map((p) => (p.toString ? p.toString(8) : String(p))).join(" and ")}`);
+}
+`the unit circle under ${String(T)}: ${String(circle(0, 1).map(T))}`
+```
+
+---
+
+Page: https://ratmath.com/complex/riemann-sphere.html
+
+Topic
+
+## The Riemann sphere and conformal maps
+
+Stereographic projection wraps the plane round a sphere with the point at infinity at the top, and it is a rational map: a complex rational goes to a point of the sphere with rational coordinates. The standard conformal maps between the disc and the half-plane are Möbius maps, so they are exact too.
+
+```js
+toSphere("3/4");                        // [24/25, 0, −7/25]
+fromSphere([0, 0, 1]);                  // infinity
+cayley();                               // z ↦ (z − i)/(z + i): upper half-plane onto the disc
+discAutomorphism("1/2", "3/5 + 4/5i");  // a self-map of the disc sending 1/2 to 0
+joukowski(2);                           // 5/4
+gridImage(cayley(), { re: [-1, 1], im: [0, 2], step: "1/2" });   // exact circles, for a picture
+```
+
+### Stereographic projection
+
+Put the unit sphere with its equator on the unit circle and project from the north pole. The point z = x + iy goes to
+
+(∣z∣2+12x​, ∣z∣2+12y​, ∣z∣2+1∣z∣2−1​),
+a point with rational coordinates whenever z is a complex rational, and ∞ goes to the pole. The inverse is (X+iY)/(1−Z). Circles on the sphere become circles or lines in the plane (lines are the circles through the pole), which is why Möbius maps send generalized circles to generalized circles. The chordal distance, the straight-line distance between the two points of the sphere, is exact too: squared, it is 4∣z−w∣2/((1+∣z∣2)(1+∣w∣2)).
+
+### Rotations of the sphere
+
+A Möbius map with matrix proportional to a unitary one, (a−bˉ​baˉ​), turns the Riemann sphere rigidly. `isSphereRotation` tests this exactly, and such a map keeps every chordal distance. The group of these maps is SU(2) modulo ±1, the rotation group of space, which is the same fact as the [quaternion rotations](https://ratmath.com/complex/rotations.html) seen from another side.
+
+### Conformal maps of standard regions
+
+- cayley(): z↦z+iz−i​ maps the upper half-plane onto the unit disc and the real line onto the unit circle.
+
+- halfPlaneToDisc(z0): z↦z−zˉ0​z−z0​​ does the same and sends a chosen point to 0.
+
+- discAutomorphism(a, u): z↦u1−aˉzz−a​ with |a| Maps that need exp or log, such as a strip onto a half-plane, use the certified functions with their branches reported (see [Branches](https://ratmath.com/complex/branches.html)). `regions` tests exactly whether a point is in the disc, the upper or right half-plane, or the first quadrant.
+
+### Hooks for pictures
+
+Pictures are drawn by the graphics package, and this package supplies the data. `gridImage(T)` sends each line of a grid to its exact image circle under a Möbius map. `sampleGrid(f)` evaluates a Möbius map, or any function of two doubles, on a grid for domain colouring, and says `kind: "estimated"`.
+
+| call | returns |
+
+| toSphere(z), fromSphere([X, Y, Z]), chordal2(z, w) | Exact rationals; a Complex or infinity |
+
+| cayley(), halfPlaneToDisc(z0), discAutomorphism(a, u) | Mobius maps |
+
+| joukowski(z), regions | A Complex; exact membership tests |
+
+| gridImage(T, { re, im, step }), sampleGrid(f, { re, im, width, height }) | { kind: "exact", lines }; { kind: "estimated", values } |
+
+### Try it
+
+```js
+for (const z of ["0", "1", "i", "3/4", "1/2 + 2/3i", infinity]) PRINT(`${String(z).padEnd(10)} → (${toSphere(z).map(String).join(", ")})`);
+PRINT("back again:", String(fromSphere(toSphere("1/2 + 2/3i"))));
+const R = mobius("3/5", "4/5i", "4/5i", "3/5");   // [[a, b], [−b̄, ā]] with a = 3/5, b = 4i/5
+PRINT(String(R), " a rotation of the sphere:", R.isSphereRotation);
+PRINT("chordal² between 0 and 1:", String(chordal2(0, 1)), " and between their images:", String(chordal2(R.apply(0), R.apply(1))));
+const C = cayley();
+PRINT("Cayley:", String(C), " i ↦", String(C.apply("i")), " 0 ↦", String(C.apply(0)), " ∞ ↦", String(C.apply(infinity)));
+const D = discAutomorphism("1/2", "3/5 + 4/5i");
+PRINT(String(D), " 1/2 ↦", String(D.apply("1/2")), " |D(3/5 + 4/5i)|² =", String(D.apply("3/5 + 4/5i").norm()));
+PRINT("Joukowski: 2 ↦", String(joukowski(2)), " i ↦", String(joukowski("i")));
+gridImage(C, { re: [-1, 1], im: [0, 1], step: "1/2" }).lines.map((l) => `${l.from} ↦ ${String(l.image)}`)
+```
+
+---
+
+Page: https://ratmath.com/complex/taylor-models.html
+
+Complex analysis
+
+## Taylor models
+
+A rectangle encloses one value. A Taylor model encloses a whole function on a disc: a polynomial, and a number that the difference between the polynomial and the function is proved never to exceed. Contour integrals, zero counts and residues in this package are all read off such models.
+
+```js
+import { taylorModel, disc } from "@ratmath/complex";
+
+const m = taylorModel("exp(z) - 3z^2", disc("1/2", "1/2"));
+m.error;                    // about 3.4e-14: |f − P| ≤ this on the whole disc
+m.at("3/4 + 1/4i");         // 0.55118761286 - 0.60124581415i ± 3.4e-14
+m.range();                  // a disc that holds every value f takes
+m.integral(0, 1);           // 0.71828182846 ± 3.4e-14, which is e − 2
+m.derivative("1/4");        // a model of f′ on the smaller disc
+```
+
+### The statement a model makes
+
+A model of f on the closed disc ∣z−c∣≤r is a polynomial P of degree at most n and a number ε with
+
+∣f(z)−P(z−c)∣≤εfor every z in the disc,
+and with f analytic there. Both halves matter. The bound is what makes every number that comes out of a model a proven enclosure. Analyticity is what lets a contour be moved inside the disc, an integral be read off an antiderivative, and Cauchy's estimate bound a derivative.
+
+### Arithmetic that keeps the statement true
+
+Models on the same disc are added, multiplied and divided, and each operation moves into ε whatever it cannot keep.
+
+- Sum. Polynomials add and so do the bounds.
+
+- Product. (P+e1​)(Q+e2​): the terms of PQ above degree n are bounded by the sizes of their coefficients, and the cross terms by ε1​sup∣Q∣+ε2​sup∣P∣+ε1​ε2​.
+
+- Reciprocal. A candidate g for 1/f is found as a power series, with no rigour needed. Then δ=fg−1 is computed as a model. If ∣δ∣≤d on the disc, f cannot vanish there and ∣1/f−g∣≤sup∣g∣d/(1−d). If no such d is found the division is refused.
+
+- exp, log, roots. Write f=f0​+h with f0​ the value at the centre. Then ef=ef0​∑hk/k!, logf=logf0​+log(1+h/f0​), and likewise for roots, each series cut off with its tail bounded. Sine, cosine and the hyperbolic functions come from exp.
+
+Inside, the polynomial is kept in the scaled variable w=(z−c)/r with ∣w∣≤1, so the size of a polynomial on the disc is at most the sum of the sizes of its coefficients. Coefficients are whole numbers of units of 2−bits, every rounding goes down, and every rounding is added to ε.
+
+### Refusing
+
+An operation whose hypothesis cannot be shown is not carried out. The error says which, and the cure is a smaller disc.
+
+```js
+taylorModel("1/z", disc("1/4", "1/2"));
+// ComplexError division-by-zero: division by a function that may vanish on the disc of radius 0.5 about 0.25 + 0i
+
+taylorModel("log(z)", disc("-1", "1/4"));
+// ComplexError branch-cut: the principal branch jumps on the negative real axis.
+// A logarithm cut elsewhere is fine on this disc:
+taylorModel("log(-z) + i*pi", disc("-1", "1/4"));
+```
+
+The principal logarithm is not analytic across its cut, so a model of it on a disc that reaches the cut would be a model of a different function. That is why it is refused and not quietly continued.
+
+### What a model says
+
+| call | returns |
+
+| taylorModel(f, disc, { order, bits }) | The model. f is text in the variable z, or a function of one model built from add sub mul div neg pow scale and the package's exp log sqrt root pow sin cos tan sinh cosh tanh gamma zeta. Order defaults to 12 and bits to 96. |
+
+| m.error | ε, a Rational |
+
+| m.coefficients | The polynomial's coefficients in powers of z − c, exact complex rationals |
+
+| m.at(z) | A Rect certain to contain f(z), for a point of the disc |
+
+| m.range() | A Disc certain to contain every value on the disc |
+
+| m.zeroCount() | The number of zeros of f in the disc when one coefficient outweighs the rest and ε together (Rouché's theorem), otherwise null |
+
+| m.derivative(radius) | A model of f′ on a strictly smaller disc: the polynomial is differentiated, and Cauchy's estimate bounds the derivative of the part left out by ε/(r − radius) |
+
+| m.integral(a, b) | A Rect certain to contain the integral from a to b along any path in the disc |
+
+| CTM.z(disc), CTM.constant(disc, value) | The model of z itself, and of a constant, to build on by hand |
+
+More order means a smaller ε, as long as the function is analytic on a disc comfortably larger than the model's. When ε stops shrinking the limit is the working precision, and more bits moves it.
+
+### Try it
+
+```js
+// e^z on the unit disc, to more and more terms
+for (const order of [4, 8, 16, 32]) {
+  const m = taylorModel("exp(z)", disc(0, 1), { order, bits: 160 });
+  PRINT("order", String(order).padStart(2), " error ≤", m.error.toNumber().toExponential(2));
+}
+
+// A model is a function you can ask things of.
+const m = taylorModel("exp(z) - 3z^2", disc("1/2", "1/2"));
+PRINT("f(3/4 + i/4)   =", m.at("3/4 + 1/4i").toString());
+PRINT("∫ from 0 to 1  =", m.integral(0, 1).toString(), "   (e − 2)");
+PRINT("f′(1/2)        =", m.derivative("1/4").at("1/2").toString(), "   (√e − 3)");
+
+// Rouché: how many zeros in the disc?
+PRINT("zeros of z^3 + 1/100 in |z| ≤ 1:", taylorModel("z^3 + 1/100", disc(0, 1)).zeroCount());
+PRINT("zeros of exp(z) in |z| ≤ 1/4:  ", taylorModel("exp(z)", disc(0, "1/4")).zeroCount());
+
+// What cannot be proved is refused.
+try { taylorModel("1/z", disc("1/4", "1/2")); } catch (e) { PRINT(e.code + ":", e.message); }
+String(taylorModel("sin(z)/z", disc("3", "1/2"), { order: 6 }))
+```
+
+---
+
+Page: https://ratmath.com/complex/contour-integrals.html
+
+Complex analysis
+
+## Contour integrals
+
+The integral of a function along a path in the plane, returned as a rectangle that is proved to contain it. Cauchy's theorem and the residue theorem can then be watched to hold, to as many digits as wanted.
+
+```js
+import { Contour, contourIntegral, residueSum } from "@ratmath/complex";
+
+contourIntegral("z^2", Contour.path(["0", "1", "1 + i"]));     // -2/3 + 2/3i, to 27 places
+contourIntegral("1/z", Contour.circle(0, 1));                  // 0 + 6.2831853072i ± 7.9e-17
+contourIntegral("exp(z)/(z - 1/2)", Contour.circle(0, 1));     // 2πi·√e, Cauchy's formula
+residueSum("exp(z)/z^3", Contour.circle(0, 1));                // 0.5 ± 3.3e-15
+```
+
+### Contours
+
+A contour is a chain of straight pieces and arcs of circles whose joints are exact complex rationals. A circle through rational points has plenty of them: if e is any complex rational, e/eˉ lies on the unit circle. So a circle is cut into quarter turns at exact points, and can be cut again wherever the integration needs.
+
+| call | returns |
+
+| Contour.path(points), Contour.polygon(points) | Straight pieces through the points; the polygon closes back to the first |
+
+| Contour.rectangle(rect) | The boundary, counter-clockwise |
+
+| Contour.circle(center, radius, { clockwise }) | Once round, from centre + radius |
+
+| Contour.arc(center, from, to, { clockwise }) | The arc between two points at the same distance from the centre |
+
+| c.join(other), c.reversed() | One after the other; the same path backwards |
+
+| c.closed, c.start, c.end, c.pieces | What it is |
+
+| c.winding(w) | How many times a closed contour goes round w |
+
+| c.sample(perPiece) | Points as doubles, for drawing |
+
+A `Rect` or a `Disc` may be given wherever a contour is wanted, and means its boundary.
+
+### How the integral is proved
+
+Cover a piece of the contour with a disc and build a [Taylor model](https://ratmath.com/complex/taylor-models.html) of the integrand on it. The model proves the integrand analytic on the disc, so the integral over the piece does not depend on its shape, only on its two ends:
+
+∫ab​f(z)dz=A(b)−A(a)+(at most ε∣b−a∣),
+where A is the antiderivative of the model's polynomial, a polynomial too. An arc of at most a half turn lies inside the disc that has its chord as a diameter, so arcs cost nothing extra.
+
+When the model cannot be built (the disc reaches a singularity) or its bound is too loose, the piece is halved and each half tried again. Pieces near a singularity become small and pieces far from one stay large. A singularity on the contour can never be covered, and the integral is refused with the place named.
+
+### Options
+
+| call | returns |
+
+| contourIntegral(f, contour, opts) | A Rect. tolerance is the width aimed for (default 2⁻⁴⁰); order and bits are those of the models (12 and 96); maxDepth and maxPieces limit the subdivision. |
+
+| residueSum(f, contour, opts) | The integral round a closed contour divided by 2πi: the sum of the residues inside |
+
+For a narrower answer raise `order` and `bits` together with the tolerance. The answer is always a true enclosure; if the tolerance cannot be met at the working precision, a wider rectangle is returned, never a wrong one.
+
+A principal logarithm or root whose cut crosses the contour is refused, because it is not one analytic function along the path. Turn the cut out of the way: `log(-z) + i*pi` is a logarithm cut along the positive real axis.
+
+### Try it
+
+```js
+// Cauchy's theorem: an analytic function integrates to 0 round a closed path...
+PRINT("∮ exp(z)·z dz round a square:", contourIntegral("exp(z) * z", rect([-1, 1], [-1, 1])).toString());
+
+// ...and to the same thing along different paths between two points.
+const A = contourIntegral("exp(z) * z", Contour.path(["0", "2", "2 + i"]));
+const B = contourIntegral("exp(z) * z", Contour.arc("1 + 1/2i", "0", "2 + i"));
+PRINT("along two sides:", A.toString());
+PRINT("along an arc:   ", B.toString());
+
+// 1/z picks up 2πi each time round the origin.
+PRINT("once round:     ", contourIntegral("1/z", Contour.circle(0, 1)).toString());
+PRINT("clockwise:      ", contourIntegral("1/z", Contour.circle(0, 1, { clockwise: true })).toString());
+PRINT("not round it:   ", contourIntegral("1/z", Contour.circle(3, 1)).toString());
+
+// Cauchy's integral formula recovers a value from the boundary: f(1/2) = (1/2πi) ∮ f(z)/(z − 1/2) dz
+PRINT("exp(1/2) from the unit circle:", residueSum("exp(z)/(z - 1/2)", Contour.circle(0, 1)).toString());
+PRINT("exp(1/2) directly:            ", exp("1/2").toString());
+
+// Thirty digits, by asking for them.
+PRINT(contourIntegral("1/z", Contour.circle(0, 1), { tolerance: new Rational(1n, 10n ** 30n), order: 24, bits: 160 }).toString(30));
+
+// A pole on the path is refused, and located.
+try { contourIntegral("1/(z - 1)", Contour.circle(0, 1), { maxDepth: 14 }); } catch (e) { PRINT(e.code + ":", e.message.slice(0, 80) + "…"); }
+```
+
+---
+
+Page: https://ratmath.com/complex/zeros.html
+
+Complex analysis
+
+## Zeros and the argument principle
+
+How many zeros does a function have inside a contour? The answer is a whole number, and a whole number can be proved by enclosing it in an interval narrower than 1. From counting comes finding: every zero in a rectangle, each in its own small box, with its multiplicity.
+
+```js
+import { argumentPrinciple, countZeros, zeros, Contour, rect } from "@ratmath/complex";
+
+argumentPrinciple("z^3 - 1", Contour.circle(0, 2));   // 3
+argumentPrinciple("tan(z)", Contour.circle(0, 2));    // -1: one zero, two poles
+
+const r = zeros("exp(z) - 3z", rect([-1, 3], [-2, 2]));
+r.count;                 // 2, proved
+r.zeros[0].enclosure;    // 0.61906128673594511 + 0i ± 2.6e-23
+r.zeros[1].enclosure;    // 1.5121345516578425 + 0i ± 1.1e-22
+```
+
+### The argument principle
+
+For f meromorphic inside a simple closed contour C and with no zero or pole on it,
+
+2πi1​∮C​f(z)f′(z)​dz=Z−P,
+the number of zeros inside minus the number of poles, each counted with its multiplicity. The left side is the number of times the image curve f(C) winds round 0, and that is how it is computed here, with no derivative.
+
+Cover a piece of C with a disc and take a [Taylor model](https://ratmath.com/complex/taylor-models.html) of f there. If the model's range is a disc that misses 0, then on that piece f stays inside a half-plane, its argument changes by less than half a turn, and the change is exactly the principal argument of f(end)/f(start). Those are enclosed, added up round the contour and divided by 2π. The total is an interval a tiny fraction wide around a whole number. Where the range does not miss 0 the piece is halved; a zero on the contour itself is refused and located.
+
+### Finding the zeros in a rectangle
+
+`zeros(f, rect)` cuts the rectangle into cells and settles each one with a model on the disc around it. Three proofs are tried.
+
+- No zero. The model's range misses 0.
+
+- Exactly k zeros (Rouché). If one coefficient of the model outweighs all the others and ε together, f has as many zeros in the disc as that one term, which is its index k. For k ≥ 2 the disc is then shrunk around the zeros' centroid for as long as it still holds all k.
+
+- Exactly one simple zero (Newton). For the disc D with centre c, form N=c−f(c)/f′(D), where f′(D) is a disc holding every value of the derivative. Since f(z)=f(c)+(z−c)g with g in the convex hull of f′(D), every zero in D lies in N. If N is inside D there is exactly one, and repeating the step shrinks its enclosure quadratically.
+
+A cell that none of these settles is cut in four. What is still unsettled at the tolerance is grouped and counted by the argument principle on a small frame.
+
+### What comes back
+
+| call | returns |
+
+| zeros(f, rect, opts) | { zeros, count, complete, unresolved } |
+
+| zeros[k].enclosure | A Rect holding the zero (or the cluster) |
+
+| zeros[k].multiplicity, .simple | The total multiplicity in the enclosure. simple is true for one simple zero. Otherwise the enclosure holds either one zero of that order or several closer together than the working precision can separate, and the total is what is proved. |
+
+| zeros[k].isolating | A larger disc in which those are the only zeros |
+
+| zeros[k].boundary | True when the enclosure straddles the rectangle's edge; such zeros are listed but not counted |
+
+| count, complete | The proven number of zeros in the rectangle, when complete is true |
+
+| unresolved | Parts that could not be settled, with reasons: a singularity of f, or the work budget |
+
+| argumentPrinciple(f, contour), countZeros(f, contour) | The winding number of f(contour) round 0: zeros minus poles |
+
+Options: `bits` (digits of each simple zero, default 64), `tolerance` (how closely two zeros are told apart, default 2⁻²⁰), `order`, `modelBits`, `maxCells`.
+
+The function must be analytic on the rectangle for the count to mean zeros. That is checked, not assumed: a cell on which no model can be built is reported in `unresolved`, so a pole inside leaves `complete` false and says where the trouble is.
+
+### Try it
+
+```js
+// Every solution of cos z = z in a 20 by 20 square. Only one is real.
+const r = zeros("cos(z) - z", rect([-10, 10], [-10, 10]));
+PRINT("zeros:", r.count, "  all settled:", r.complete);
+for (const z of r.zeros) PRINT("   ", z.enclosure.toString(18));
+PRINT("the same count from the boundary alone:", countZeros("cos(z) - z", rect([-10, 10], [-10, 10])));
+
+// A double zero is reported as one, with its multiplicity.
+const d = zeros("(z - 1/3)^2 * (z + 1)", rect([-2, 2], [-1, 1]));
+for (const z of d.zeros) PRINT(z.simple ? "simple zero at" : `zero of order ${z.multiplicity} in`, z.enclosure.toString(12));
+
+// Zeros minus poles
+PRINT("tan z inside |z| = 2:", argumentPrinciple("tan(z)", Contour.circle(0, 2)), " (zero at 0, poles at ±π/2)");
+
+// A pole in the region is noticed.
+const t = zeros("tan(z)", rect([-1, 2], [-1, 1]), { tolerance: "1/1000" });
+PRINT("tan z on [-1, 2] × [-1, 1]: found", t.zeros.length, "zero; complete:", t.complete);
+PRINT("   unresolved near", t.unresolved[0].region.toString(4));
+
+// The quintic z^5 − z + 1 has no solution in radicals. Here are its roots anyway.
+zeros("z^5 - z + 1", rect([-2, 2], [-2, 2])).zeros.map((z) => z.enclosure.toString(15))
+```
+
+---
+
+Page: https://ratmath.com/complex/residues.html
+
+Complex analysis
+
+## Residues and Laurent series
+
+Near an isolated singularity a function is a series in positive and negative powers. The coefficient of 1/(z−c) is the residue, the only part that survives integration round the point. Here the coefficients come as proven rectangles, and the kind of singularity comes from proven counts.
+
+```js
+import { laurent, residue, singularities, rect } from "@ratmath/complex";
+
+residue("exp(z)/z^3", 0);            // 0.5 ± 3.1e-14
+residue("1/(z^2 + 1)", "i");         // 0 - 0.5i
+residue("exp(1/z)", 0);              // 1, at an essential singularity
+
+laurent("exp(z)/z^2", 0, 1, { from: -3, to: 2 }).toString();
+// a_-3 = 0 ± 2.9e-14      a_-2 = 1      a_-1 = 1
+// a_0 = 0.5               a_1 = 0.1666666667   a_2 = 0.0416666667
+
+singularities("exp(z)/((z^2 + 1)^2 * sin(z))", rect([-2, 2], [-2, 2])).singularities;
+// pole of order 2 at −i, pole of order 1 at 0, pole of order 2 at i
+```
+
+### Laurent coefficients
+
+If f is analytic in an annulus about c, then there
+
+f(z)=n=−∞∑∞​an​(z−c)n,an​=2πi1​∮(z−c)n+1f(z)​dz,
+the integral taken round any circle in the annulus. `laurent(f, c, radius)` computes these as [contour integrals](https://ratmath.com/complex/contour-integrals.html), all of them over the same subdivision of the circle. The series belongs to the annulus, not to the function: a different radius that crosses a singularity gives a different series, as the code box shows.
+
+### Residues
+
+`residue(f, point)` is a−1​: the integral round a small circle (radius 1/4 unless given) divided by 2πi. The circle must hold no other singularity. For a formula given as text that is checked: the zeros of the formula's denominator are counted inside the circle and inside a far smaller one, and if the counts differ the call is refused with the advice to use a smaller radius. The point may be exact, or an enclosure of the kind `zeros` returns.
+
+### Kinds of singularity
+
+An isolated singularity is removable when the function stays bounded near it, a pole of order m when (z−c)mf does, and essential otherwise. No amount of arithmetic near the point can tell a coefficient that is 0 from one that is merely tiny, so this cannot be decided by sampling. It can be decided from the formula.
+
+`singularities(f, rect)` splits the formula into a numerator and a denominator by the rules of fractions, with tan=sin/cos. Then:
+
+- the zeros of the denominator are found, with multiplicity, by zeros;
+
+- round each one, the zeros of the numerator are counted on a small frame. None means a pole of the denominator's order. If the numerator vanishes there too, the difference of the two counts is the order of the pole, or shows the singularity to be removable;
+
+- where an entire function such as exp is applied to something with a pole, the singularity is essential;
+
+- where a logarithm or root is applied to something that vanishes, there is a branch point, which is not isolated at all.
+
+One thing is taken on trust and said so in each entry's `note`: that a numerator zero and a denominator zero found inside the same box of width 2⁻²⁴ are the same point.
+
+| call | returns |
+
+| laurent(f, center, radius, { from, to }) | coefficient(n), coefficients, principalPart (the negative powers, those proved non-zero marked), toString() |
+
+| residue(f, point, { radius }) | A Rect |
+
+| singularities(f, rect) | { singularities: [{ enclosure, kind, order, note }], complete, unresolved, numerator, denominator }; kind is "pole", "removable", "essential", "branch point" or "undetermined" |
+
+### Try it
+
+```js
+// The three kinds, by their principal parts.
+PRINT("sin(z)/z at 0:    ", laurent("sin(z)/z", 0, 1, { from: -3, to: -1 }).coefficients.map((c) => c.containsZero() ? "0" : c.toString(4)).join("  "));
+PRINT("exp(z)/z^2 at 0:  ", laurent("exp(z)/z^2", 0, 1, { from: -3, to: -1 }).coefficients.map((c) => c.containsZero() ? "0" : c.toString(4)).join("  "));
+PRINT("exp(1/z) at 0:    ", laurent("exp(1/z)", 0, 1, { from: -3, to: -1 }).coefficients.map((c) => c.toString(4)).join("  "));
+
+// The same decided from the formulas.
+for (const f of ["sin(z)/z", "(1 - cos(z))/z^5", "exp(1/z)", "tan(z)/z^2", "log(z)/(z - 1/2 - i/2)"]) {
+  const s = singularities(f, rect([-1, 1], [-1, 1]));
+  PRINT(f.padEnd(24), "→", s.singularities.map((x) => x.kind + (x.kind === "pole" ? " of order " + x.order : "")).join(", "));
+}
+
+// One function, two annuli, two series.
+const f = "1/((z - 1)*(z - 2))";
+PRINT("inside |z| < 1:    a_-1, a_0, a_1 =", [-1, 0, 1].map((n) => laurent(f, 0, "1/2", { from: -1, to: 1 }).coefficient(n).toString(4)).join(",  "));
+PRINT("between 1 and 2:   a_-1, a_0, a_1 =", [-1, 0, 1].map((n) => laurent(f, 0, "3/2", { from: -1, to: 1 }).coefficient(n).toString(4)).join(",  "));
+
+// A residue at an essential singularity, and a refused circle.
+PRINT("Res exp(1/z) at 0 =", residue("exp(1/z)", 0).toString());
+try { residue("1/(z*(z - 1))", 0, { radius: 2 }); } catch (e) { PRINT(e.code + ":", e.message); }
+residue("1/(z*(z - 1))", 0, { radius: "1/2" }).toString()
+```
+
+---
+
+Page: https://ratmath.com/complex/real-integrals.html
+
+Complex analysis
+
+## Real integrals by residues
+
+Some integrals over the real line are easiest in the complex plane: close the path with a large semicircle, show the semicircle contributes nothing, and add up residues. Two families are done here from start to finish, with each step of the argument written out and the value proved.
+
+```js
+import { realLineIntegral, trigIntegral } from "@ratmath/complex";
+
+const r = realLineIntegral("1/(x^2 + 1)^2");
+r.real;                    // an interval around π/2 = 1.5707963267948966, 2.7e-20 wide
+r.steps;                   // the argument, as { title, detail }
+
+realLineIntegral("x/(x^2 + 1)", { fourier: 2 }).sin;   // ∫ x sin 2x/(x² + 1) dx = π/e²
+
+trigIntegral("1/(2 + cos(t))").real;                   // 2π/√3 = 3.62759872847
+```
+
+### Rational functions over the whole line
+
+Let f=P/Q with degQ≥degP+2 and no real root of Q. Integrate round the segment [−R,R] and the semicircle above it. On the semicircle ∣f(z)∣≤C/R2, so that part is at most πC/R and vanishes as R grows. What is left is
+
+∫−∞∞​f(x)dx=2πiImzk​>0∑​Reszk​​f.
+The steps the function takes:
+
+- The formula is turned into exact polynomials P and Q and common factors are cancelled, so a removable singularity on the real axis does no harm.
+
+- The degrees are compared; if the integral does not converge the call is refused and says why.
+
+- Every root of Q is found by zeros in a square that Cauchy's bound proves large enough, and the count is checked against the degree.
+
+- Each root must be provably above or below the real axis. One that is on it, or too close to tell, is refused: the integral does not exist as it stands.
+
+- At a simple pole the residue is P/Q′, evaluated on the root's enclosure. At a multiple pole it is a contour integral round a small circle.
+
+### Fourier integrals
+
+With `{ fourier: a }` the integrand is f(x)eiax. For a>0 the factor eiaz decays in the upper half-plane, and Jordan's lemma makes the semicircle vanish as soon as degQ≥degP+1. For a the path closes below instead. When f is real on the real axis the real and imaginary parts of the result are the cosine and sine integrals, returned as `cos` and `sin`.
+
+### Trigonometric integrals over a period
+
+For a rational function R of cost and sint, put z=eit. Then cost=(z+1/z)/2, sint=(z−1/z)/(2i), dt=dz/(iz), and as t runs from 0 to 2π the point z runs once round the unit circle:
+
+∫02π​R(cost,sint)dt=∮∣z∣=1​g(z)dz=2πi∣zk​∣<1∑​Reszk​​g.
+`trigIntegral` makes the substitution, reduces g to a quotient of polynomials, and sums the residues at the poles proved to be inside the circle. `cos(2t)` and the like are understood. A pole on the circle means the integrand is unbounded, and is refused.
+
+| call | returns |
+
+| realLineIntegral(f, { fourier, bits, variable }) | { value, real, cos, sin, poles, steps }. value is a Rect; real the interval for a real integrand; cos and sin with fourier. |
+
+| trigIntegral(f, { bits, variable }) | { value, real, poles, steps } |
+
+| poles | Every pole: { enclosure, order, taken, residue } |
+
+| steps | The argument: [{ title, detail }] |
+
+The formula's variable is x (or z) for the line and t (or theta, or x) for the circle; name another with `variable`. Coefficients must be exact, which here means rational numbers and i.
+
+### Try it
+
+```js
+// The whole argument for one integral.
+const r = realLineIntegral("x^2/(x^4 + 1)");
+for (const s of r.steps) PRINT(s.title + ":\n   " + s.detail);
+PRINT("π/√2 =", (Math.PI / Math.SQRT2).toString());
+PRINT("");
+
+// A table of classics
+const show = (label, interval, exact) => PRINT(label.padEnd(34), ((interval.lo.toNumber() + interval.hi.toNumber()) / 2).toFixed(15), "  ", exact);
+show("∫ dx/(x² + 1)", realLineIntegral("1/(x^2 + 1)").real, "π");
+show("∫ dx/(x² + 1)²", realLineIntegral("1/(x^2 + 1)^2").real, "π/2");
+show("∫ dx/(x⁴ + 5x² + 4)", realLineIntegral("1/(x^4 + 5x^2 + 4)").real, "π/6");
+show("∫ cos x/(x² + 1) dx", realLineIntegral("1/(x^2 + 1)", { fourier: 1 }).cos, "π/e");
+show("∫ x sin 2x/(x² + 1) dx", realLineIntegral("x/(x^2 + 1)", { fourier: 2 }).sin, "π/e²");
+show("∫₀^2π dt/(2 + cos t)", trigIntegral("1/(2 + cos(t))").real, "2π/√3");
+show("∫₀^2π cos⁴t dt", trigIntegral("cos(t)^4").real, "3π/4");
+show("∫₀^2π cos 2t/(5 − 4 cos t) dt", trigIntegral("cos(2t)/(5 - 4cos(t))").real, "π/6");
+
+// What cannot be done is refused with the reason.
+for (const f of ["1/(x^2 - 1)", "x/(x^2 + 1)"]) {
+  try { realLineIntegral(f); } catch (e) { PRINT(f.padEnd(14), "→", e.message); }
+}
+```
+
+---
+
+Page: https://ratmath.com/complex/gamma-zeta.html
+
+Complex analysis
+
+## Gamma and zeta
+
+The two functions the rest of analytic number theory leans on, at any complex argument and to any precision, as rectangles proved to contain the value. They are also functions of Taylor models, so they can be integrated round contours and searched for zeros like anything else in the package.
+
+```js
+import { gamma, rgamma, logGamma, zeta, zetaZeros } from "@ratmath/complex";
+
+gamma(5);                      // 24 ± 5.4e-20
+gamma("1/2");                  // 1.7724538509 ± 1.7e-21, which is √π
+gamma("1 + i");                // 0.49801566812 - 0.1549498283i ± 4.2e-22
+gamma("1 + i", { bits: 160 }); // the same to fifty digits
+rgamma(-3);                    // exactly 0: 1/Γ is entire
+
+zeta(2);                       // 1.64493406685 ± 1.7e-21, π²/6
+zeta(-1);                      // -0.083333333333, which is −1/12
+zeta("1/2 + 14i");             // 0.02224114261 - 0.103258123266i
+
+zetaZeros(10, 35);             // five zeros, each proved to have real part exactly 1/2
+```
+
+### Gamma
+
+Three classical facts, each with a remainder that can be bounded.
+
+- Stirling's series, for z far to the right: logΓ(z)=(z−21​)logz−z+21​log2π+k=1∑n−1​2k(2k−1)z2k−1B2k​​+Rn​(z), where ∣Rn​(z)∣ is at most sec2n(21​argz) times the first term left out.
+
+- The recurrence Γ(z+1)=zΓ(z) moves any z far enough right for the series to reach the precision asked.
+
+- The reflection formula Γ(z)Γ(1−z)=π/sinπz handles the far left.
+
+The computation goes through 1/Γ, which is entire, so nothing is divided until the last step. `gamma` refuses at the poles 0, −1, −2, …; `rgamma` is 0 there. `logGamma`, for Re z > 0, is the branch that is real on the positive axis, which is not always the principal logarithm of Γ(z).
+
+### Zeta
+
+For Re s ≥ 0 the Euler–Maclaurin formula, with any N and m:
+
+ζ(s)=n=1∑N−1​n−s+s−1N1−s​+2N−s​+k=1∑m​(2k)!B2k​​s(s+1)⋯(s+2k−2)N−s−2k+1+R,
+∣R∣≤(2m)!∣B2m​∣​σ+2m−1∣s(s+1)⋯(s+2m−1)∣​N1−σ−2m,σ=Res.
+N and m are chosen so that the bound is below the precision wanted. To the left of Re s = 0 the functional equation ζ(s)=2sπs−1sin(πs/2)Γ(1−s)ζ(1−s) is used. As with gamma, the work is done on the entire function (s−1)ζ(s), exported as `zetaTimesSMinus1`.
+
+### Enclosures in, models in
+
+Give a `Rect` or a `Disc` and the result encloses every value over it. Give a [Taylor model](https://ratmath.com/complex/taylor-models.html), or write `gamma(z)` or `zeta(z)` in a formula, and the result is a model of the function on the disc, with the remainder bounds above taken over the whole disc. That is what lets the rest of the package work on them:
+
+```js
+residue("gamma(z)", -3, { radius: "1/2" });    // -0.16666666667: the residue at −n is (−1)ⁿ/n!
+residue("zeta(z)", 1, { radius: "1/2" });      // 1
+singularities("gamma(z)", rect([-7/2, 1], [-1, 1]));   // simple poles at 0, −1, −2, −3
+countZeros("zeta(z)", rect([0, 1], [10, 30])); // 3
+```
+
+### The zeros of zeta, and the Riemann hypothesis for each
+
+`zetaZeros(t1, t2)` finds every zero with imaginary part between t1 and t2. The search is [`zeros`](https://ratmath.com/complex/zeros.html) on the strip 0 ≤ Re s ≤ 1, so each zero is isolated, proved simple, and the count is proved complete.
+
+Then each zero is shown to lie on the critical line Re s = 1/2 exactly, not merely near it. The functional equation and ζ(sˉ)=ζ(s)​ pair every zero ρ with 1−ρˉ​, its mirror image in the critical line. Take a small disc centred on the line. It is its own mirror image. If it is proved to hold exactly one zero, that zero is its own mirror image, and so its real part is 1/2. The proof that the disc holds exactly one zero is Rouché's theorem on a Taylor model of ζ, `zeroCount() === 1`.
+
+Each entry's `onCriticalLine` records whether that proof went through, and `allOnCriticalLine` is the hypothesis verified for the range searched.
+
+| call | returns |
+
+| gamma(z, { bits }), rgamma(z), logGamma(z) | A Rect (or a model, for a model) |
+
+| zeta(s, { bits }), zetaTimesSMinus1(s) | A Rect (or a model) |
+
+| zetaZeros(t1, t2, { bits }) | { zeros: [{ t, enclosure, onCriticalLine }], count, complete, allOnCriticalLine }; t is the interval holding the zero's height |
+
+### Try it
+
+```js
+// Gamma at a few points, checked against what is known.
+PRINT("Γ(1/2)²        =", gamma("1/2").mul(gamma("1/2")).toString(), "  (π)");
+PRINT("Γ(1 + i)       =", gamma("1 + i").toString(18));
+PRINT("Γ(−5/2 + 3i)   =", gamma("-5/2 + 3i").toString(12));
+PRINT("to 60 digits   :", gamma("1 + i", { bits: 220 }).toString(60));
+
+// Zeta
+PRINT("ζ(2)           =", zeta(2).toString(18), "  (π²/6)");
+PRINT("ζ(−1)          =", zeta(-1).toString(18), "  (−1/12)");
+PRINT("ζ(−2)          =", zeta(-2).toString(), "  (a trivial zero)");
+PRINT("ζ(1/2 + 100i)  =", zeta("1/2 + 100i").toString(15));
+
+// The pole of zeta has residue 1; the poles of gamma have residues (−1)ⁿ/n!.
+PRINT("Res ζ at 1     =", residue("zeta(z)", 1, { radius: "1/2" }).toString());
+PRINT("Res Γ at −3    =", residue("gamma(z)", -3, { radius: "1/2" }).toString(), "  (−1/6)");
+
+// The first zeros of zeta, each proved to be on the critical line.
+const z = zetaZeros(10, 35);
+PRINT("zeros with 10 < t < 35:", z.count, "  search complete:", z.complete, "  all on the line:", z.allOnCriticalLine);
+for (const p of z.zeros) PRINT("   1/2 + i·" + p.enclosure.toString(22).split("+ ")[1].replace("i ±", "  ±"), p.onCriticalLine ? " on the line" : "");
+```
+
+---
+
+Page: https://ratmath.com/complex/cayley-dickson.html
+
+Cayley–Dickson numbers
+
+## Quaternions, octonions and the doubling ladder
+
+One construction builds the complex numbers from the reals, the quaternions from the complex numbers, the octonions from the quaternions, and keeps going. Each step doubles the dimension and gives up one law of arithmetic. Everything here is exact.
+
+### The construction
+
+A number of the next level is a pair (a,b) of numbers of this one, with
+
+(a,b)(c,d)=(ac−dˉb, da+bcˉ)(a,b)​=(aˉ,−b).
+Starting from the reals, where aˉ=a, the pairs are the complex numbers with i=(0,1). Pairs of those are the quaternions, with j=(0,1) and k=(0,i). Then come the octonions (dimension 8), the sedenions (16), and so on without end.
+
+```js
+import { quaternions, octonions, sedenions, cayleyDickson, quaternion, octonion } from "@ratmath/complex/cayley";
+
+const [one, i, j, k] = quaternions.units;
+String(i.mul(j));              // "k"
+String(j.mul(i));              // "-k": order matters
+String(i.mul(j).mul(k));       // "-1": Hamilton's i j k = −1
+
+const q = quaternion(1, 2, 3, 4);        // or quaternion("1 + 2i + 3j + 4k")
+String(q.norm());              // "30"
+String(q.conj());              // "1 - 2i - 3j - 4k"
+String(q.inv());               // "1/30 - 1/15i - 1/10j - 2/15k"
+String(q.mul("i"));            // "-2 + i + 4j - 3k"
+String(quaternion("i").mul(q));// "-2 + i - 4j + 3k"
+
+String(octonion("e1 + 2 e7").mul(octonion("1 - e3")));   // "e1 + e2 - 2 e4 + 2 e7"
+cayleyDickson(5).dim;          // 32; levels 0 to 8 are available
+```
+
+Elements are immutable, with coordinates in `.coeffs` on the basis 1,e1​,e2​,… (written 1,i,j,k for the quaternions). The methods are `add sub mul neg scale conj norm inv pow rightDivide leftDivide commutator associator equals`. Arguments may be elements, numbers, coefficient lists or text.
+
+### What each level loses
+
+| Level | Name | Dimension | Loses | Still has |
+
+| 0 | real numbers | 1 | | order, and everything below |
+
+| 1 | complex numbers | 2 | order; zˉ=z | commutative, associative |
+
+| 2 | quaternions | 4 | commutativity | associative: a division ring |
+
+| 3 | octonions | 8 | associativity | alternative, N(xy)=N(x)N(y), division |
+
+| 4 | sedenions | 16 | alternativity, the norm law, division | flexible, power-associative, inverses |
+
+`algebra.properties()` finds these by exact computation instead of quoting them, and for the sedenions and beyond it returns an actual pair of zero divisors:
+
+```js
+octonions.properties();
+// { name: "octonions", dimension: 8, commutative: false, associative: false,
+//   alternative: true, flexible: true, composition: true, zeroDivisors: null }
+
+const [a, b] = sedenions.properties().zeroDivisors;
+String(a);  String(b);         // "e1 + e10", "e4 - e15"
+String(a.mul(b));              // "0", though neither factor is 0
+```
+
+Alternative means (xx)y=x(xy) and (yx)x=y(xx): any two elements generate an associative algebra, even though three do not. Flexible means (xy)x=x(yx). Power-associative means xn does not depend on how it is bracketed, which is why `pow` works at every level.
+
+### Norm and inverse
+
+At every level xxˉ=xˉx=N(x), the sum of the squares of the coordinates, so x−1=xˉ/N(x) is a two-sided inverse of any nonzero x. What changes is what an inverse is good for. Up to the octonions N(xy)=N(x)N(y), which makes xy=0 impossible unless a factor is 0, and x=ab−1 solves xb=a. In the sedenions the norm law fails, zero divisors appear, and xb=a may have no solution or many; `rightDivide` and `leftDivide` check their answer there and refuse (code `no-quotient`) when it does not hold.
+
+The norm law is a statement about sums of squares. For the complex numbers it is the two-square identity of Diophantus, for the quaternions Euler's four-square identity, for the octonions Degen's eight-square identity. Hurwitz proved in 1898 that there are no others: an identity of this kind exists only for 1, 2, 4 and 8 squares. The ladder goes on, but the good behaviour stops at the octonions.
+
+### Commutators and associators
+
+[x,y]=xy−yx measures the failure of commutativity and [x,y,z]=(xy)z−x(yz) the failure of associativity.
+
+```js
+const O = octonions;
+String(O.basis(1).mul(O.basis(2)).mul(O.basis(4)));         // "e7"
+String(O.basis(1).mul(O.basis(2).mul(O.basis(4))));         // "-e7"
+String(O.basis(1).associator(O.basis(2), O.basis(4)));      // "2 e7"
+```
+
+### Other fields
+
+`cayleyDickson(level, field)` builds the algebra over any RatMath field object. Over `CQ` from the main entry point the level-2 algebra is the biquaternions (quaternions with complex coefficients), which do have zero divisors: (1+ii′)(1−ii′)=0 where i′ is the scalar one.
+
+### Try it
+
+```js
+// The ladder, computed.
+for (let level = 0; level <= 5; level++) {
+  const p = cayleyDickson(level).properties();
+  PRINT(`${String(p.dimension).padStart(2)}  ${p.name.padEnd(38)}`,
+    [p.commutative && "commutative", p.associative && "associative", p.alternative && "alternative", p.flexible && "flexible"].filter(Boolean).join(", ") || "none of these");
+}
+
+// Euler's four-square identity is the norm law for quaternions.
+const p = quaternion(1, 2, 3, 4), q = quaternion(2, -1, 0, 5);
+PRINT("(1² + 2² + 3² + 4²)(2² + 1² + 0² + 5²) =", p.norm().multiply(q.norm()).toString());
+PRINT("p·q =", p.mul(q).toString(), "  whose squares add to", p.mul(q).norm().toString());
+
+// In the sedenions it fails, and with it division.
+const [a, b] = sedenions.properties().zeroDivisors;
+PRINT(`(${a})·(${b}) =`, a.mul(b).toString(), "  norms:", a.norm().toString(), "and", b.norm().toString());
+
+// Octonions: not associative, but any two elements associate.
+const x = octonion(1, 2, 0, -1, 3, 0, 1, 1), y = octonion(0, 1, 1, 0, -2, 1, 0, 3), z = octonion("e3 + e5");
+PRINT("(xy)z − x(yz) =", x.associator(y, z).toString());
+PRINT("(xx)y − x(xy) =", x.associator(x, y).toString(), "   (xy)x − x(yx) =", x.associator(y, x).toString());
+
+// Biquaternions have zero divisors
+const HC = cayleyDickson(2, CQ);
+HC.of(1, "i").mul(HC.of(1, "-i")).toString()
+```
+
+---
+
+Page: https://ratmath.com/complex/rotations.html
+
+Rotations
+
+## Rotations by quaternions
+
+A quaternion turns space: v↦qvq−1. With rational quaternions every rotation matrix, every composed rotation and every rotated point is exact, and no square root or sine is ever taken.
+
+### The rotation of a quaternion
+
+Treat a vector (x,y,z) as the quaternion xi+yj+zk. For a nonzero q=w+(ai+bj+ck), the map v↦qvq−1 sends vectors to vectors and is a rotation about the axis (a,b,c) by the angle θ with
+
+tan2θ​=wa2+b2+c2​​,cosθ=w2+(a2+b2+c2)w2−(a2+b2+c2)​.
+Multiplying q by a nonzero real number changes nothing, since it cancels against q−1. So q does not have to have norm 1, and that is what keeps everything rational: a unit quaternion for a quarter turn needs 2​, but 1+k is the same rotation.
+
+```js
+import { quaternion, rotate, rotationMatrix, rotationOf, fromAxis } from "@ratmath/complex/cayley";
+
+rotate("1 + k", [1, 0, 0]).map(String);          // ["0", "1", "0"]: a quarter turn about z
+
+rotationMatrix(quaternion(1, 2, 3, 4));          // rows of Rationals:
+//  -2/3   2/15  11/15
+//   2/3  -1/3    2/3
+//   1/3  14/15   2/15
+
+String(fromAxis([1, 1, 1], 1));                  // "1 + i + j + k"
+rotate(fromAxis([1, 1, 1], 1), [1, 0, 0]).map(String);   // ["0", "1", "0"]: x → y → z → x
+String(rotationOf("1 + i + j + k").cos);         // "-1/2": a third of a turn
+```
+
+`fromAxis(axis, t)` is 1+t(axis), so for a unit axis t is the tangent of half the angle: t=1 is a quarter turn, t=1/2 turns by the angle of the 3-4-5 triangle. `rotationOf(q)` returns the axis with cosθ and tan2(θ/2), both rational.
+
+### Rational rotation matrices
+
+The matrix of v↦qvq−1 has entries that are quadratic in w,a,b,c divided by N(q), so a rational quaternion gives an orthogonal matrix with rational entries and determinant 1. The converse holds too: every rational rotation matrix comes from a rational quaternion, and `fromRotationMatrix` finds it with no square roots, returning the primitive one (whole numbers with no common factor).
+
+```js
+import { fromRotationMatrix, primitive } from "@ratmath/complex/cayley";
+
+String(fromRotationMatrix([[0, 0, 1], [1, 0, 0], [0, 1, 0]]));   // "1 + i + j + k"
+String(fromRotationMatrix(rotationMatrix(quaternion(1, 2, 3, 4))));   // "1 + 2i + 3j + 4k"
+String(primitive(quaternion("-1/2", 0, "3/4", 0)));               // "2 - 3j"
+fromRotationMatrix([[1, 0, 0], [0, 1, 0], [0, 0, -1]]);           // throws: a reflection
+```
+
+This is the three-dimensional version of rational points on the circle. There, (m+ni)2/(m2+n2) gives every rational rotation of the plane from a pair of whole numbers; here four whole numbers give every rational rotation of space, a fact Euler found while looking for exactly such matrices.
+
+### Composition
+
+Doing b and then a is the product ab, because a(bvb−1)a−1=(ab)v(ab)−1. Rotations of space do not commute and neither do quaternions.
+
+```js
+const a = quaternion("1 + i"), b = quaternion("1 + j");   // quarter turns about x and about y
+String(a.mul(b));                                // "1 + i + j + k": together, a third of a turn about (1, 1, 1)
+rotate(a.mul(b), [1, 0, 0]).map(String);         // ["0", "1", "0"]
+rotate(b.mul(a), [1, 0, 0]).map(String);         // ["0", "0", "-1"]: the other order is a different rotation
+```
+
+Composing many rotations as floating-point matrices drifts: the product slowly stops being orthogonal and has to be repaired. An exact quaternion product has nothing to repair. The coordinates do grow, and `primitive` removes any common factor.
+
+### Interpolation
+
+`interpolate(q0, q1, t)` is (1−t)q0​+tq1​, taking the shorter way round. Because scale does not matter, this straight line between two quaternions passes through the same rotations as the great arc of spherical interpolation, in the same order, just not at constant speed. Every point on it with rational t is an exact rotation.
+
+```js
+import { interpolate } from "@ratmath/complex/cayley";
+
+["0", "1/4", "1/2", "3/4", "1"].map((t) => rotate(interpolate(1, "1 + k", t), [1, 0, 0]).join(", "));
+// ["1, 0, 0", "15/17, 8/17, 0", "3/5, 4/5, 0", "7/25, 24/25, 0", "0, 1, 0"]
+```
+
+The points on the way from (1,0,0) to (0,1,0) are rational points of the circle: Pythagorean triples again.
+
+### Try it
+
+```js
+// A cube's rotations: quarter turns about x and y generate all 24.
+const key = (q) => rotationMatrix(q).map((r) => r.join(",")).join(";");
+const gens = [quaternion("1 + i"), quaternion("1 + j")];
+const seen = new Map([[key(quaternion(1)), quaternion(1)]]);
+let frontier = [quaternion(1)];
+while (frontier.length) {
+  const next = [];
+  for (const q of frontier) for (const g of gens) {
+    const p = primitive(g.mul(q));
+    if (!seen.has(key(p))) { seen.set(key(p), p); next.push(p); }
+  }
+  frontier = next;
+}
+PRINT("rotations of the cube:", seen.size);
+const byAngle = {};
+for (const q of seen.values()) {
+  const c = rotationOf(q).cos.toString();
+  byAngle[c] = (byAngle[c] ?? 0) + 1;
+}
+PRINT("how many with each cos θ:", JSON.stringify(byAngle));
+
+// An exact rotation matrix, and proof that it is one.
+const q = quaternion(2, 1, -1, 3);
+const M = rotationMatrix(q);
+for (const row of M) PRINT("  ", row.map((x) => x.toString().padStart(6)).join(" "));
+const dot = (u, v) => u.reduce((s, x, n) => s.add(x.multiply(v[n])), new Rational(0));
+PRINT("rows have length²:", M.map((r) => dot(r, r).toString()).join(", "), "  first two are perpendicular:", dot(M[0], M[1]).toString());
+
+// 999 third-turns about (1, 1, 1): the point is back exactly where it started.
+let v = [new Rational(1), new Rational(2), new Rational(3)];
+const third = quaternion("1 + i + j + k");
+for (let n = 0; n < 999; n++) v = rotate(third, v);
+v.map(String)
+```
+
+---
+
+Page: https://ratmath.com/complex/integer-quaternions.html
+
+Integer quaternions
+
+## Integer quaternions and four squares
+
+Quaternions with whole-number coordinates have an arithmetic like that of the integers, with primes and greatest common divisors, once one extra family is let in. The reward is Lagrange's theorem: every whole number is a sum of four squares, with the squares computed.
+
+### Lipschitz and Hurwitz
+
+The obvious integer quaternions are the Lipschitz ones, a+bi+cj+dk with whole numbers. They are not enough: division with a smaller remainder can fail. To divide, you round the exact quotient to the nearest integer quaternion, and the centre of a unit cell, 21​(1+i+j+k), is at distance exactly 1 from every corner, so the remainder can be as large as the divisor.
+
+Hurwitz's repair is to add those centres. A Hurwitz quaternion has coordinates that are all whole numbers or all halves of odd numbers. Now the farthest any point is from the nearest Hurwitz quaternion is 1/2​, the remainder is always smaller than the divisor, and Euclid's algorithm works.
+
+```js
+import { hurwitz, hurwitzUnits, hurwitzGcd } from "@ratmath/complex/cayley";
+
+const a = hurwitz(7, 3, -2, 5);
+const b = hurwitz(2, 1, 1, 0);
+a.norm();  b.norm();                    // 87n, 6n: norms are whole numbers (BigInt)
+const { quotient, remainder } = a.divmod(b);
+String(quotient);                       // "5/2 + 1/2i - 5/2j + 1/2k"
+String(remainder);                      // "k"
+quotient.mul(b).add(remainder).equals(a);   // true:  a = quotient·b + remainder,  N(remainder) < N(b)
+
+hurwitz("1/2", "1/2", "1/2", "1/2").norm();  // 1n: a unit
+hurwitzUnits().length;                  // 24
+```
+
+There are 24 units (elements of norm 1): ±1,±i,±j,±k and the sixteen 21​(±1±i±j±k). They form a group, the binary tetrahedral group, whose rotations are the twelve symmetries of a tetrahedron. A `Hurwitz` has `add sub mul neg conj norm divmod equals`, `isLipschitz`, `toIntegers()` and `toQuaternion()`.
+
+### Greatest common divisors
+
+Because multiplication does not commute, there are divisors on the right and on the left. `divmod` divides on the right, and `hurwitzGcd(a, b)` is a right greatest common divisor: a=a′g and b=b′g, and every common right divisor divides g. It is determined up to one of the 24 units on the left.
+
+```js
+const c = hurwitz(1, 2, 0, 0);
+String(hurwitzGcd(hurwitz(3, 1, -2, 5).mul(c), hurwitz(2, 1, 1, 0).mul(c)));
+// "2 - i", which is −i·(1 + 2i): the common factor, up to a unit
+```
+
+### Four squares
+
+The norm of a+bi+cj+dk is a2+b2+c2+d2, and norms multiply. So if two numbers are sums of four squares, so is their product, and the product quaternion writes it as one. It remains to handle primes, and the proof is an algorithm:
+
+- For an odd prime p, the congruence x2+y2+1≡0(modp) has a solution (the (p+1)/2 values of x2 and the (p+1)/2 values of −1−y2 cannot all be different).
+
+- Then p divides the norm of x+yi+j without dividing the quaternion itself.
+
+- So the right gcd of x+yi+j and p is neither a unit nor p times one: it has norm exactly p.
+
+- If that gcd has half-integer coordinates, one of the units times it does not.
+
+```js
+import { quaternionOfNorm, fourSquares, fourSquaresCount } from "@ratmath/complex/cayley";
+
+String(quaternionOfNorm(7));          // "1 + i + j + 2k":  1 + 1 + 1 + 4 = 7
+String(quaternionOfNorm(1000003));    // "-699 - 151i - 699j"
+fourSquares(2026);                    // [23n, 23n, 22n, 22n]
+fourSquares(310);                     // [15n, 7n, 6n, 0n]
+fourSquares(10n ** 18n + 9n);         // [1000000000n, 3n, 0n, 0n]
+```
+
+`fourSquares(n)` factors n, takes a quaternion of norm p for each prime factor and multiplies them. It needs the factorisation, so it refuses (code `too-large`) a number with two prime factors above a million; a number-theory package will lift that limit.
+
+### How many ways
+
+Jacobi's four-square theorem counts the representations, with order and signs distinguished:
+
+r4​(n)=8d∣n, 4∤d∑​d.
+
+```js
+fourSquaresCount(1);      // 8n:  (±1, 0, 0, 0) in each of four places
+fourSquaresCount(7);      // 64n
+fourSquaresCount(2026);   // 24336n
+```
+
+For an odd prime this is 8(p+1), which is also the number of Lipschitz quaternions of norm p.
+
+### Try it
+
+```js
+// Division: where whole-number coordinates fail and Hurwitz ones succeed.
+const a = hurwitz(1, 1, 1, 1), b = hurwitz(2, 0, 0, 0);
+const d = a.divmod(b);
+PRINT(`(${a}) ÷ 2:  quotient ${d.quotient},  remainder ${d.remainder}`);
+PRINT("  (with whole-number quotients only, every remainder would have norm 4 = N(2))");
+
+// Euclid's algorithm, step by step
+const common = hurwitz(1, 2, 0, 0);
+let x = hurwitz(3, 1, -2, 5).mul(common), y = hurwitz(2, 1, 1, 0).mul(common);
+while (!y.isZero()) {
+  const { quotient, remainder } = x.divmod(y);
+  PRINT(`N = ${String(x.norm()).padStart(4)}:  (${x}) = (${quotient})·(${y}) + (${remainder})`);
+  [x, y] = [y, remainder];
+}
+PRINT("right gcd:", x.toString(), " of norm", x.norm().toString(), "  (the common factor 1 + 2i, times the unit -i)");
+
+// Lagrange's theorem for a few numbers, built from primes.
+for (const n of [7, 15, 310, 2026, 999983]) {
+  const s = fourSquares(n);
+  PRINT(`${n} = ${s.map((v) => `${v}²`).join(" + ")}`, "   ways:", fourSquaresCount(n).toString());
+}
+
+// Jacobi's count against brute force for a small number
+const n = 30;
+let ways = 0;
+for (let p = -5; p <= 5; p++) for (let q = -5; q <= 5; q++) for (let r = -5; r <= 5; r++) for (let s = -5; s <= 5; s++) if (p * p + q * q + r * r + s * s === n) ways++;
+[ways, fourSquaresCount(n)]
+```
