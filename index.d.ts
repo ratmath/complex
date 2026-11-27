@@ -359,6 +359,20 @@ export class CTM {
 }
 export function taylorModel(f: AnalyticFunction, disc: Disc | Rect | ComplexLike, opts?: ModelOptions): CTM;
 
+/** The Cauchy–Riemann equations for f = u + iv, with u and v formulas in x and y. */
+export function cauchyRiemann(u: string, v: string, options?: { variables?: [string, string] }): {
+  /** true: both residuals reduce to 0; false: one is proven nonzero at `witness.point`; null: undecided. */
+  holds: boolean | null;
+  reason: string;
+  ux: string; uy: string; vx: string; vy: string;
+  /** u_x − v_y and u_y + v_x, reduced. */
+  residuals: [string, string];
+  /** f′ = u_x + i·v_x when the equations hold. */
+  derivative: string | null;
+  derivativeParts?: [string, string];
+  witness?: { equation: string; point: [string, string]; value: RationalInterval };
+};
+
 // ---- contours, integrals, zeros ----
 
 export interface ContourPiece { readonly a: Complex; readonly b: Complex; readonly center: Complex | null; readonly ccw: boolean }

@@ -2,7 +2,7 @@
 
 > Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions. Part of the RatMath Shelf; numbers come from @ratmath/core (a peer dependency). ESM: `import * as complex from "@ratmath/complex"`.
 
-Built from 0.3.0, commit 5735292. `file:line` is relative to the package root (also node_modules/@ratmath/complex/); on GitHub: https://github.com/ratmath/complex/blob/5735292/<file>#L<line>. Docs pages are under https://ratmath.com/complex/. Full types: index.d.ts.
+Built from 0.3.0, commit 5801d7f plus uncommitted changes. `file:line` is relative to the package root (also node_modules/@ratmath/complex/); on GitHub: https://github.com/ratmath/complex/blob/5801d7f/<file>#L<line>. Docs pages are under https://ratmath.com/complex/. Full types: index.d.ts.
 
 Types: `type RationalLike = Rational | bigint | number | string`; `type ComplexLike = Complex | RationalLike | readonly [RationalLike, RationalLike] | { re: RationalLike; im: RationalLike }`; `type Enclosable = ComplexLike | Rect | Disc`; `type IntervalLike = RationalLike | RationalInterval | Bounds | readonly [RationalLike, RationalLike]`; `type Side = "above" | "below" | "right" | "left"`; `type Precision = number | { bits?: number }`; `type FunctionName = "exp" | "sin" | "cos" | "tan" | "sinh" | "cosh" | "tanh" | "log" | "sqrt" | "asin" | "acos" | "atan" | "asinh" | "acosh" | "atanh"`; `type Infinity = typeof infinity`; `type SpherePoint = ComplexLike | Infinity`; `type MobiusKind = "identity" | "elliptic" | "parabolic" | "hyperbolic" | "loxodromic"`; `type AnalyticFunction = string | ((z: CTM) => CTM | Enclosable) | { type: string }`; `type ContourLike = Contour | Rect | Disc | readonly ComplexLike[]`
 
@@ -30,7 +30,7 @@ name(params) → result — meaning · file:line · docs page
 - `fromPolar(r: IntervalLike, theta: IntervalLike | { turns: RationalLike }, bits?: number) → Rect` — r·e^(iθ) as a Rect. θ is in radians (a Rational or a RationalInterval), or { turns: q } for the exact angle 2πq, which gives exact points on the axes. · src/functions.js:375 · polar
 - `exactTurn(z: ComplexLike) → Rational | null` — The exact fraction of a full turn when it is rational, else null. · src/functions.js:351 · polar
 - `exp(z: Enclosable, opts?: Precision) → Rect (+1 overload)` — e^z. · src/functions.js:196 · functions
-- `log(z: Enclosable, opts?: number | BranchOptions) → Branched (+1 overload)` — The logarithm. · src/functions.js:224 · branches
+- `log(z: Enclosable, opts?: number | BranchOptions) → Branched (+1 overload)` — The logarithm. · src/functions.js:224 · functions
 - `sqrt(z: Enclosable, opts?: number | BranchOptions) → Branched (+1 overload)` — The square root: root(z, 2). sqrt("3 + 4i") is exactly 2 + i. · src/functions.js:281 · numbers
 - `root(z: Enclosable, n: number, opts?: number | BranchOptions) → Branched (+1 overload)` — The n-th root. · src/functions.js:248 · branches
 - `roots(z: ComplexLike, n: number, opts?: Precision) → Rect[]` — All n values of the n-th root of an exact z, counter-clockwise from the principal one. · src/functions.js:284 · polar
@@ -44,7 +44,7 @@ name(params) → result — meaning · file:line · docs page
 - `tanh(z: Enclosable, opts?: Precision) → Rect (+1 overload)` · src/functions.js:209 · functions
 - `asin(z: Enclosable, opts?: number | BranchOptions) → Branched` — The inverse sine. · src/functions.js:415 · branches
 - `acos(z: Enclosable, opts?: number | BranchOptions) → Branched` — The inverse cosine, π/2 − asin z. · src/functions.js:419 · branches
-- `atan(z: Enclosable, opts?: number | BranchOptions) → Branched` — The inverse tangent, −i·atanh(iz). · src/functions.js:437 · branches
+- `atan(z: Enclosable, opts?: number | BranchOptions) → Branched` — The inverse tangent, −i·atanh(iz). · src/functions.js:437 · functions
 - `asinh(z: Enclosable, opts?: number | BranchOptions) → Branched` — The inverse hyperbolic sine, −i·asin(iz). · src/functions.js:441 · branches
 - `acosh(z: Enclosable, opts?: number | BranchOptions) → Branched` — The inverse hyperbolic cosine, log(z + sqrt(z − 1)·sqrt(z + 1)). · src/functions.js:445 · branches
 - `atanh(z: Enclosable, opts?: number | BranchOptions) → Branched` — The inverse hyperbolic tangent. · src/functions.js:428 · branches
@@ -92,6 +92,7 @@ name(params) → result — meaning · file:line · docs page
 - `zeta(s: Enclosable, opts?: number | { bits?: number }) → Rect (+1 overload)` — The Riemann zeta function for complex s: a Complex, a Rect or a Disc gives a Rect certain to contain every value; a Taylor model gives the model of ζ of it. · src/special.js:296 · taylor-models
 - `zetaTimesSMinus1(s: Enclosable, opts?: number | { bits?: number }) → Rect (+1 overload)` — (s − 1)·ζ(s): an entire function. · src/special.js:287 · gamma-zeta
 - `zetaZeros(t1: RationalLike, t2: RationalLike, opts?: { bits?: number; order?: number; tolerance?: RationalLike; maxCells?: number }) → { zeros: ZetaZero[]; count: number; complete: boolean; allOnCriticalLine: boolean …` — The zeros of ζ with imaginary part between t1 and t2 (the non-trivial ones: they all lie in 0 < Re s < 1). zetaZeros(10, 30) → { zeros: [{ t, enclosure,… · src/special.js:323 · gamma-zeta
+- `cauchyRiemann(u: string, v: string, options?: { variables?: [string, string] }) → { /** true: both residuals reduce to 0; false: one is proven nonzero at `witness.point`; null: undecided. */ holds: boolean | null; reason: string …` — Check the Cauchy–Riemann equations u_x = v_y and u_y = −v_x for f = u + iv. · src/cauchy-riemann.js:45 · functions
 - `plan: readonly PlannedPhase[]` · src/plan.js:5 · reference
 
 ## Example

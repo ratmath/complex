@@ -79,6 +79,7 @@
 <div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
 <tr><td><code>taylorModel(f, disc, opts)</code></td><td>The model of f on a disc: a polynomial and a proven bound on \(|f - P|\) there. <code>f</code> is text in z or a function of one model. Options <code>order</code> (12), <code>bits</code> (96). Refuses (<code>division-by-zero</code>, <code>branch-point</code>, <code>branch-cut</code>, <code>precision</code>) when a hypothesis cannot be shown.</td></tr>
+<tr><td><code>cauchyRiemann(u, v, { variables })</code></td><td>Checks \(u_x = v_y\), \(u_y = -v_x\) for formulas in x and y: <code>holds</code> true (residuals reduce to 0, with <code>derivative</code>), false (a certified witness point) or null (undecided).</td></tr>
 <tr><td><code>CTM</code></td><td><code>CTM.z(disc, opts)</code>, <code>CTM.constant(disc, value, opts)</code>; <code>add sub mul div neg inv pow(n) scale(q)</code>; <code>.center .radius .order .bits .disc .error .coefficients</code>; <code>at(z)</code> (Rect), <code>range()</code> (Disc), <code>zeroCount()</code>, <code>derivative(radius)</code>, <code>integral(a, b)</code>, <code>toString()</code>. The package's <code>exp log sqrt root pow sin cos tan sinh cosh tanh gamma rgamma logGamma zeta</code> accept a model and return one.</td></tr>
 </table></div>
 <h2>Contours, integrals, zeros</h2>

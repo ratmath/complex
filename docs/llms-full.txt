@@ -1,6 +1,6 @@
 # @ratmath/complex 0.3.0: full documentation
 
-> Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions. From https://ratmath.com/complex/, commit 5735292. Each page ends with a runnable example; in it, PRINT(...) prints.
+> Complex and hypercomplex numbers for RatMath: exact complex arithmetic, honest branches, certified complex analysis, quaternions and octonions. From https://ratmath.com/complex/, commit 5801d7f. Each page ends with a runnable example; in it, PRINT(...) prints.
 
 
 ---
@@ -214,6 +214,8 @@ Every export of `@ratmath/complex` and of `@ratmath/complex/cayley`. Anything ca
 | Export | What it does |
 
 | taylorModel(f, disc, opts) | The model of f on a disc: a polynomial and a proven bound on ∣f−P∣ there. f is text in z or a function of one model. Options order (12), bits (96). Refuses (division-by-zero, branch-point, branch-cut, precision) when a hypothesis cannot be shown. |
+
+| cauchyRiemann(u, v, { variables }) | Checks ux​=vy​, uy​=−vx​ for formulas in x and y: holds true (residuals reduce to 0, with derivative), false (a certified witness point) or null (undecided). |
 
 | CTM | CTM.z(disc, opts), CTM.constant(disc, value, opts); add sub mul div neg inv pow(n) scale(q); .center .radius .order .bits .disc .error .coefficients; at(z) (Rect), range() (Disc), zeroCount(), derivative(radius), integral(a, b), toString(). The package's exp log sqrt root pow sin cos tan sinh cosh tanh gamma rgamma logGamma zeta accept a model and return one. |
 
@@ -701,6 +703,22 @@ Because the real intervals for x and y are independent, a rectangle is the natur
 
 The true value is inside the rectangle returned. Always, not with high probability. That lets the output prove things: if two enclosures do not intersect, the numbers are different; if the enclosure of f(z) excludes 0, then f has no zero at z (or anywhere in an input rectangle). It cannot prove equality, since a rectangle that contains 0 says only "possibly zero"; for that see the exact layer in [Complex rationals](https://ratmath.com/complex/numbers.html) or the equality tests in [symbolic](https://ratmath.com/symbolic/).
 
+### Is it holomorphic? The Cauchy–Riemann equations
+
+A function f=u+iv of z=x+iy, with u and v continuously differentiable, is complex differentiable exactly where
+
+ux​=vy​,uy​=−vx​,
+and then f′(z)=ux​+ivx​. `cauchyRiemann(u, v)` takes u and v as formulas in x and y, differentiates them symbolically, and reduces the two residuals ux​−vy​ and uy​+vx​ to lowest terms. Both 0 means the equations hold wherever the formulas are defined (`holds: true`, with the derivative). A residual that does not reduce to 0 is evaluated at sample points with certified enclosures; one that excludes 0 is a witness (`holds: false`). If neither happens the answer is `null`, never a guess.
+
+```js
+import { cauchyRiemann } from "@ratmath/complex";
+
+cauchyRiemann("x^2 - y^2", "2*x*y").holds;        // true: it is z²
+cauchyRiemann("x^2 - y^2", "2*x*y").derivative;   // "2*x + i·(2*y)", that is 2z
+cauchyRiemann("log(x^2+y^2)/2", "atan(y/x)").holds;   // true off the axis: log z
+cauchyRiemann("x", "-y").reason;                  // "u_x − v_y = 2, which is not 0 at …": conj(z)
+```
+
 ### Quick first, exact after
 
 `refined(name, z, { bits })` wraps any function as a Core `Refinement`: a fast low-precision value at once (`.quick`), and the certified one when asked (`.exact()`). An interface can show the quick value while a slider moves and sharpen it when the slider stops.
@@ -740,6 +758,10 @@ PRINT("cos over the box:", cos(box).toString(), " may be zero:", cos(box).contai
 
 // A rectangle that may contain a pole of tan is refused.
 try { tan(rect([1, 2], [-1, 1])); } catch (e) { PRINT(e.code + ":", e.message); }
+
+// Cauchy–Riemann: z³ is holomorphic, |z|² is not
+PRINT(cauchyRiemann("x^3 - 3*x*y^2", "3*x^2*y - y^3").derivative);
+PRINT(cauchyRiemann("x^2 + y^2", "0").reason);
 tan(rect("1 + i", "1/10")).toString()
 ```
 

@@ -26,4 +26,5 @@ export { CTM, taylorModel } from "./src/taylor.js";
 export { Contour, contourIntegral, residueSum, argumentPrinciple, countZeros, zeros } from "./src/contour.js";
 export { laurent, residue, singularities, realLineIntegral, trigIntegral } from "./src/residues.js";
 export { gamma, rgamma, logGamma, zeta, zetaTimesSMinus1, zetaZeros } from "./src/special.js";
+export { cauchyRiemann } from "./src/cauchy-riemann.js";
 export { plan } from "./src/plan.js";

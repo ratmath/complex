@@ -43,6 +43,17 @@ sin(rect("1 + i", "1/100")); // an enclosure in, an enclosure of every value out
 <h2>What "certified" means here</h2>
 <p>The true value is inside the rectangle returned. Always, not with high probability. That lets the output prove things: if two enclosures do not intersect, the numbers are different; if the enclosure of \(f(z)\) excludes 0, then \(f\) has no zero at \(z\) (or anywhere in an input rectangle). It cannot prove equality, since a rectangle that contains 0 says only "possibly zero"; for that see the exact layer in <a href="numbers.html">Complex rationals</a> or the equality tests in <a href="https://ratmath.com/symbolic/">symbolic</a>.</p>
 
+<h2>Is it holomorphic? The Cauchy–Riemann equations</h2>
+<p>A function \(f = u + iv\) of \(z = x + iy\), with \(u\) and \(v\) continuously differentiable, is complex differentiable exactly where</p>
+\[ u_x = v_y, \qquad u_y = -v_x, \]
+<p>and then \(f'(z) = u_x + i\,v_x\). <code>cauchyRiemann(u, v)</code> takes \(u\) and \(v\) as formulas in \(x\) and \(y\), differentiates them symbolically, and reduces the two residuals \(u_x - v_y\) and \(u_y + v_x\) to lowest terms. Both 0 means the equations hold wherever the formulas are defined (<code>holds: true</code>, with the derivative). A residual that does not reduce to 0 is evaluated at sample points with certified enclosures; one that excludes 0 is a witness (<code>holds: false</code>). If neither happens the answer is <code>null</code>, never a guess.</p>
+<pre><code>import { cauchyRiemann } from "@ratmath/complex";
+
+cauchyRiemann("x^2 - y^2", "2*x*y").holds;        // true: it is z²
+cauchyRiemann("x^2 - y^2", "2*x*y").derivative;   // "2*x + i·(2*y)", that is 2z
+cauchyRiemann("log(x^2+y^2)/2", "atan(y/x)").holds;   // true off the axis: log z
+cauchyRiemann("x", "-y").reason;                  // "u_x − v_y = 2, which is not 0 at …": conj(z)</code></pre>
+
 <h2>Quick first, exact after</h2>
 <p><code>refined(name, z, { bits })</code> wraps any function as a Core <code>Refinement</code>: a fast low-precision value at once (<code>.quick</code>), and the certified one when asked (<code>.exact()</code>). An interface can show the quick value while a slider moves and sharpen it when the slider stops.</p>
 <pre><code>import { refined } from "@ratmath/complex";
@@ -74,6 +85,10 @@ PRINT("cos over the box:", cos(box).toString(), " may be zero:", cos(box).contai
 
 // A rectangle that may contain a pole of tan is refused.
 try { tan(rect([1, 2], [-1, 1])); } catch (e) { PRINT(e.code + ":", e.message); }
+
+// Cauchy–Riemann: z³ is holomorphic, |z|² is not
+PRINT(cauchyRiemann("x^3 - 3*x*y^2", "3*x^2*y - y^3").derivative);
+PRINT(cauchyRiemann("x^2 + y^2", "0").reason);
 tan(rect("1 + i", "1/10")).toString()
 </template>
 </article>
