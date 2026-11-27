@@ -1,8 +1,8 @@
 // Shared page furniture for the complex docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./complex.js?v=a55dc3d36e";
-import { mountRunboxes } from "./runbox.js?v=a55dc3d36e";
+import * as A from "./complex.js?v=742e5c1509";
+import { mountRunboxes } from "./runbox.js?v=742e5c1509";
 
 export { A };
 
@@ -19,6 +19,13 @@ export const PAGES = [
   { group: "Maps of the sphere" },
   { href: "mobius.html", title: "Möbius maps", blurb: "Three points to three, the cross-ratio, kinds of map, circles mapped exactly" },
   { href: "riemann-sphere.html", title: "The Riemann sphere", blurb: "Stereographic projection, sphere rotations, conformal maps, data for pictures" },
+  { group: "Complex analysis" },
+  { href: "taylor-models.html", title: "Taylor models", blurb: "A polynomial and a proven bound: a whole function enclosed on a disc" },
+  { href: "contour-integrals.html", title: "Contour integrals", blurb: "Integrals along segments and arcs, as rectangles certain to contain them" },
+  { href: "zeros.html", title: "Zeros and the argument principle", blurb: "Zeros counted as a proven whole number, then found with their multiplicities" },
+  { href: "residues.html", title: "Residues and Laurent series", blurb: "Laurent coefficients, residues, and the kind of every singularity" },
+  { href: "real-integrals.html", title: "Real integrals by residues", blurb: "Integrals over the line and over a period, with the steps shown" },
+  { href: "gamma-zeta.html", title: "Gamma and zeta", blurb: "Γ and ζ on the plane, and the zeros of ζ proved on the critical line" },
   { group: "Hypercomplex numbers" },
   { href: "cayley-dickson.html", title: "Cayley–Dickson numbers", blurb: "Quaternions, octonions, sedenions, and the law each doubling loses" },
   { href: "rotations.html", title: "Rotations", blurb: "Quaternions as exact rotations of space, with no square roots" },

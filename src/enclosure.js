@@ -358,7 +358,10 @@ export class Disc {
   }
   toString(digits = 12) {
     if (this.isPoint) return this.center.toString();
-    return `disc(${this.center}, ${dec(this.radius, digits)})`;
+    // a centre with long fractions (the result of a computation, not something typed) is shown in decimals
+    const long = [this.center.re, this.center.im].some((q) => q.denominator.toString().length > 9);
+    const c = long ? `${dec(this.center.re, digits)} ${this.center.im.numerator < 0n ? "-" : "+"} ${dec(this.center.im.abs(), digits)}i` : this.center.toString();
+    return `disc(${c}, ${dec(this.radius, digits)})`;
   }
   toJSON() {
     return { center: this.center.toJSON(), radius: this.radius.toString() };

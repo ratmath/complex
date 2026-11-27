@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
-<link rel="stylesheet" href="assets/style.css?v=a55dc3d36e">
-<script type="module" src="assets/site.js?v=a55dc3d36e"></script>
+<link rel="stylesheet" href="assets/style.css?v=742e5c1509">
+<script type="module" src="assets/site.js?v=742e5c1509"></script>
 </head>
 <body>
 <div class="shell">
@@ -26,7 +26,7 @@
 <p class="lede">Exact complex rationals, certified enclosures of everything that is not rational, and elementary functions that report what happens at a branch cut instead of silently picking a side. Quaternions, octonions and the rest of the doubling ladder are here too, exact.</p>
 
 <h2>What is here</h2>
-<p>The first two parts of the package: complex numbers with their functions, and the Cayley–Dickson numbers. Contour integrals, residues, conformal maps and the gamma and zeta functions are planned and listed at the bottom of this page.</p>
+<p>Complex numbers with their functions; Möbius maps and the Riemann sphere; complex analysis with proofs (Taylor models, contour integrals, zeros, residues, the gamma and zeta functions); and the Cayley–Dickson numbers. Every phase of the roadmap for this package is built.</p>
 <div class="cards" id="cards"></div>
 
 <h2>A first program</h2>
@@ -66,18 +66,20 @@ M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">�
 <p><strong>Enclosed where it is not.</strong> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>e</mi><mrow><mn>1</mn><mo>+</mo><mi>i</mi></mrow></msup></mrow><annotation encoding="application/x-tex">e^{1+i}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8247em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8247em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mbin mtight">+</span><span class="mord mathnormal mtight">i</span></span></span></span></span></span></span></span></span></span></span></span> is not rational, so the answer is a small rectangle with rational corners that is proven to contain it. Ask for more bits and the rectangle shrinks. An uncertain input (a rectangle or a disc) gives a rectangle containing every possible value. See <a href="enclosures.html">Rectangles and discs</a>.</p>
 <p><strong>Branch cuts are reported.</strong> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>log</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\log</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mop">lo<span style="margin-right:0.0139em;">g</span></span></span></span></span>, roots, powers and the inverse trigonometric functions jump across a cut. When the input is on the cut, or an uncertain input lies across it, the result holds the value on each side and says so; a number is never returned from the wrong side by accident. See <a href="branches.html">Branches</a>.</p>
 
+<p><strong>Whole functions are enclosed too.</strong> A <a href="taylor-models.html">Taylor model</a> is a polynomial with a proven bound on what it leaves out, valid on a whole disc. From it come <a href="contour-integrals.html">contour integrals</a> as rectangles, the number of <a href="zeros.html">zeros</a> inside a contour as a proven whole number, <a href="residues.html">residues</a>, and <a href="real-integrals.html">real integrals</a> with the steps shown. The <a href="gamma-zeta.html">zeros of the zeta function</a> are found this way, each one proved to lie on the critical line.</p>
+
 <p><strong>Maps of the sphere are exact.</strong> A <a href="mobius.html">Möbius map</a> with complex rational coefficients sends rational points to rational points and circles to circles, exactly, and stereographic projection onto the <a href="riemann-sphere.html">Riemann sphere</a> is rational too.</p>
 
-<h2>What is planned</h2>
-<p>From the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex">library roadmap</a>. Sizes are rough estimates in lines of source.</p>
+<h2>The roadmap</h2>
+<p>From the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex">library roadmap</a>. All six phases are built.</p>
 <div class="tablewrap"><table class="plan">
-<tr><th>Phase</th><th>Contents</th><th>Estimate</th></tr>
+<tr><th>Phase</th><th>Contents</th><th>State</th></tr>
 <tr><td>1</td><td>Exact complex rationals, rectangles and discs, polar form, elementary functions with branch reporting</td><td>built</td></tr>
 <tr><td>2</td><td>Cayley–Dickson numbers, quaternion rotations, integer quaternions</td><td>built</td></tr>
-<tr><td>3</td><td>Complex Taylor models; contour integrals; argument principle and zero isolation</td><td>2,200</td></tr>
-<tr><td>4</td><td>Residues, Laurent series, singularities, real integrals by residues</td><td>800</td></tr>
-<tr><td>5</td><td>Möbius and conformal maps; graphics hooks</td><td>built (pictures: 800 in graphics)</td></tr>
-<tr><td>6</td><td>Complex gamma and zeta</td><td>700</td></tr>
+<tr><td>3</td><td>Complex Taylor models; contour integrals; argument principle and zero isolation</td><td>built</td></tr>
+<tr><td>4</td><td>Residues, Laurent series, singularities, real integrals by residues</td><td>built</td></tr>
+<tr><td>5</td><td>Möbius and conformal maps; graphics hooks</td><td>built (pictures in graphics)</td></tr>
+<tr><td>6</td><td>Complex gamma and zeta</td><td>built</td></tr>
 </table></div>
 <p>It builds on Core and on <a href="https://ratmath.com/analytic/">analytic</a>, whose certified real exp, log, sine, cosine and arctangent are the only transcendental ingredients.</p>
 <section class="runbox" aria-label="Runnable code">
@@ -102,7 +104,13 @@ for (const level of [1, 2, 3, 4]) {
   const p = cayleyDickson(level).properties();
   PRINT(p.name.padEnd(16), "commutative:", p.commutative, " associative:", p.associative, " zero divisors:", p.zeroDivisors ? p.zeroDivisors.join(" times ") + " = 0" : "none");
 }
-plan.map((p) =&gt; `${p.phase}. ${p.contents}`)</textarea>
+
+// A contour integral, a count of zeros, and the first zero of zeta
+PRINT("∮ dz/z round the unit circle =", contourIntegral("1/z", Contour.circle(0, 1)).toString());
+PRINT("solutions of e^z = 3z with |z| &lt; 2:", countZeros("exp(z) - 3z", Contour.circle(0, 2)));
+const first = zetaZeros(14, 15).zeros[0];
+PRINT("first zero of ζ:", first.enclosure.toString(18), "  proved on the critical line:", first.onCriticalLine);
+zeta(2).toString(18)</textarea>
   <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
   <div class="runbox-out" aria-live="polite"></div>
 </section>
@@ -111,7 +119,7 @@ plan.map((p) =&gt; `${p.phase}. ${p.contents}`)</textarea>
 </main>
 </div>
 <script type="module">
-import { topicCards } from "./assets/site.js?v=a55dc3d36e";
+import { topicCards } from "./assets/site.js?v=742e5c1509";
 topicCards(document.getElementById("cards"));
 </script>
 </body>

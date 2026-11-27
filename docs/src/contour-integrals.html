@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contour integrals · RatMath Complex</title>
+<meta name="description" content="Proven contour integrals in @ratmath/complex: paths of segments and circular arcs through exact points, integrated with Taylor models to a rectangle certain to contain the answer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Complex analysis</div>
+<h1>Contour integrals</h1>
+<p class="lede">The integral of a function along a path in the plane, returned as a rectangle that is proved to contain it. Cauchy's theorem and the residue theorem can then be watched to hold, to as many digits as wanted.</p>
+<pre><code>import { Contour, contourIntegral, residueSum } from "@ratmath/complex";
+
+contourIntegral("z^2", Contour.path(["0", "1", "1 + i"]));     // -2/3 + 2/3i, to 27 places
+contourIntegral("1/z", Contour.circle(0, 1));                  // 0 + 6.2831853072i ± 7.9e-17
+contourIntegral("exp(z)/(z - 1/2)", Contour.circle(0, 1));     // 2πi·√e, Cauchy's formula
+residueSum("exp(z)/z^3", Contour.circle(0, 1));                // 0.5 ± 3.3e-15</code></pre>
+<h2>Contours</h2>
+<p>A contour is a chain of straight pieces and arcs of circles whose joints are exact complex rationals. A circle through rational points has plenty of them: if \(e\) is any complex rational, \(e/\bar e\) lies on the unit circle. So a circle is cut into quarter turns at exact points, and can be cut again wherever the integration needs.</p>
+<div class="tablewrap"><table class="ref">
+<tr><th>call</th><th>returns</th></tr>
+<tr><td>Contour.path(points), Contour.polygon(points)</td><td>Straight pieces through the points; the polygon closes back to the first</td></tr>
+<tr><td>Contour.rectangle(rect)</td><td>The boundary, counter-clockwise</td></tr>
+<tr><td>Contour.circle(center, radius, { clockwise })</td><td>Once round, from centre + radius</td></tr>
+<tr><td>Contour.arc(center, from, to, { clockwise })</td><td>The arc between two points at the same distance from the centre</td></tr>
+<tr><td>c.join(other), c.reversed()</td><td>One after the other; the same path backwards</td></tr>
+<tr><td>c.closed, c.start, c.end, c.pieces</td><td>What it is</td></tr>
+<tr><td>c.winding(w)</td><td>How many times a closed contour goes round w</td></tr>
+<tr><td>c.sample(perPiece)</td><td>Points as doubles, for drawing</td></tr>
+</table></div>
+<p>A <code>Rect</code> or a <code>Disc</code> may be given wherever a contour is wanted, and means its boundary.</p>
+
+<h2>How the integral is proved</h2>
+<p>Cover a piece of the contour with a disc and build a <a href="taylor-models.html">Taylor model</a> of the integrand on it. The model proves the integrand analytic on the disc, so the integral over the piece does not depend on its shape, only on its two ends:</p>
+\[ \int_a^b f(z)\,dz = A(b) - A(a) + \text{(at most } \varepsilon\,|b - a|\text{)}, \]
+<p>where \(A\) is the antiderivative of the model's polynomial, a polynomial too. An arc of at most a half turn lies inside the disc that has its chord as a diameter, so arcs cost nothing extra.</p>
+<p>When the model cannot be built (the disc reaches a singularity) or its bound is too loose, the piece is halved and each half tried again. Pieces near a singularity become small and pieces far from one stay large. A singularity <em>on</em> the contour can never be covered, and the integral is refused with the place named.</p>
+
+<h2>Options</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>call</th><th>returns</th></tr>
+<tr><td>contourIntegral(f, contour, opts)</td><td>A Rect. <code>tolerance</code> is the width aimed for (default 2⁻⁴⁰); <code>order</code> and <code>bits</code> are those of the models (12 and 96); <code>maxDepth</code> and <code>maxPieces</code> limit the subdivision.</td></tr>
+<tr><td>residueSum(f, contour, opts)</td><td>The integral round a closed contour divided by 2πi: the sum of the residues inside</td></tr>
+</table></div>
+<p>For a narrower answer raise <code>order</code> and <code>bits</code> together with the tolerance. The answer is always a true enclosure; if the tolerance cannot be met at the working precision, a wider rectangle is returned, never a wrong one.</p>
+<p>A principal logarithm or root whose cut crosses the contour is refused, because it is not one analytic function along the path. Turn the cut out of the way: <code>log(-z) + i*pi</code> is a logarithm cut along the positive real axis.</p>
+<template data-runbox>
+// Cauchy's theorem: an analytic function integrates to 0 round a closed path...
+PRINT("∮ exp(z)·z dz round a square:", contourIntegral("exp(z) * z", rect([-1, 1], [-1, 1])).toString());
+
+// ...and to the same thing along different paths between two points.
+const A = contourIntegral("exp(z) * z", Contour.path(["0", "2", "2 + i"]));
+const B = contourIntegral("exp(z) * z", Contour.arc("1 + 1/2i", "0", "2 + i"));
+PRINT("along two sides:", A.toString());
+PRINT("along an arc:   ", B.toString());
+
+// 1/z picks up 2πi each time round the origin.
+PRINT("once round:     ", contourIntegral("1/z", Contour.circle(0, 1)).toString());
+PRINT("clockwise:      ", contourIntegral("1/z", Contour.circle(0, 1, { clockwise: true })).toString());
+PRINT("not round it:   ", contourIntegral("1/z", Contour.circle(3, 1)).toString());
+
+// Cauchy's integral formula recovers a value from the boundary: f(1/2) = (1/2πi) ∮ f(z)/(z − 1/2) dz
+PRINT("exp(1/2) from the unit circle:", residueSum("exp(z)/(z - 1/2)", Contour.circle(0, 1)).toString());
+PRINT("exp(1/2) directly:            ", exp("1/2").toString());
+
+// Thirty digits, by asking for them.
+PRINT(contourIntegral("1/z", Contour.circle(0, 1), { tolerance: new Rational(1n, 10n ** 30n), order: 24, bits: 160 }).toString(30));
+
+// A pole on the path is refused, and located.
+try { contourIntegral("1/(z - 1)", Contour.circle(0, 1), { maxDepth: 14 }); } catch (e) { PRINT(e.code + ":", e.message.slice(0, 80) + "…"); }
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

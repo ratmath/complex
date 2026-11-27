@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=a55dc3d36e">
-<script type="module" src="assets/site.js?v=a55dc3d36e"></script>
+<link rel="stylesheet" href="assets/style.css?v=742e5c1509">
+<script type="module" src="assets/site.js?v=742e5c1509"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,7 +22,7 @@
 <article>
 <div class="eyebrow">Explore</div>
 <h1>Explore</h1>
-<p class="lede">Type complex numbers and see what is exact, what is enclosed, and what happens on a branch cut. Further down: roots drawn in the plane, rotations by quaternions, and sums of four squares.</p>
+<p class="lede">Type complex numbers and see what is exact, what is enclosed, and what happens on a branch cut. Further down: roots drawn in the plane, rotations by quaternions, Möbius maps, the zeros and poles of a function found with proof, and sums of four squares.</p>
 
 <h2>Two numbers</h2>
 <div class="demo">
@@ -60,6 +60,15 @@
 </div>
 <p>Three points separated by semicolons, ∞ allowed. The picture shows where the lines Re z = −2, −3/2, …, 2 and Im z = −2, …, 2 go: each image is an exact circle or line.</p>
 
+<h2>Zeros and poles in a rectangle</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-zf">f(z)</label><input id="ex-zf" class="text grow" value="exp(z) - 3z" spellcheck="false" autocapitalize="off"></div>
+<div class="demo-row"><label for="ex-zre">Re from, to</label><input id="ex-zre" class="text" value="-1, 3" size="10" spellcheck="false"><label for="ex-zim">Im from, to</label><input id="ex-zim" class="text" value="-2, 2" size="10" spellcheck="false"><button id="ex-zgo" class="chipbtn">Find</button></div>
+<div class="demo-row" id="ex-zchips"></div>
+<div class="split"><div id="ex-zpic"></div><div id="ex-zout"></div></div>
+</div>
+<p>Every zero in the rectangle is isolated and proved: a filled dot is one simple zero, a ring is a zero of higher order with its order beside it, a cross is a pole. The count is checked a second way, by the argument principle on the boundary. See <a href="zeros.html">Zeros and the argument principle</a> and <a href="residues.html">Residues</a>.</p>
+
 <h2>Four squares</h2>
 <div class="demo">
 <div class="demo-row"><label for="ex-four">Whole number</label><input id="ex-four" class="text" value="2026" spellcheck="false"></div>
@@ -75,6 +84,7 @@ PRINT("log of a square around -2:", log(rect("-2", "1/100")).toString(6));
 PRINT("fifth roots of z:");
 for (const r of roots(z, 5)) PRINT("   ", r.toString(10));
 PRINT("rotate (1, 2, 3) by 1 + i + j + k:", rotate("1 + i + j + k", [1, 2, 3]).join(", "));
+PRINT("zeros of exp(z) − 3z:", zeros("exp(z) - 3z", rect([-1, 3], [-2, 2])).zeros.map((z) =&gt; z.enclosure.toString(12)).join("  and  "));
 fourSquares(2026)</textarea>
   <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
   <div class="runbox-out" aria-live="polite"></div>
@@ -84,7 +94,7 @@ fourSquares(2026)</textarea>
 </main>
 </div>
 <script type="module">
-import { A as S, h } from "./assets/site.js?v=a55dc3d36e";
+import { A as S, h } from "./assets/site.js?v=742e5c1509";
 const $ = (id) => document.getElementById(id);
 const line = (label, f) => {
   let text;
@@ -279,6 +289,92 @@ function mobiusPanel() {
 }
 for (const id of ["ex-mf", "ex-mt"]) $(id).addEventListener("input", mobiusPanel);
 mobiusPanel();
+
+const ZCHIPS = [
+  ["exp(z) - 3z", "-1, 3", "-2, 2"], ["cos(z) - z", "-10, 10", "-10, 10"], ["z^5 - z + 1", "-2, 2", "-2, 2"],
+  ["(z - 1/3)^2*(z + 1)", "-2, 2", "-1, 1"], ["tan(z)/z^2", "-4, 4", "-2, 2"], ["gamma(z)", "-7/2, 3/2", "-1, 1"], ["zeta(z)", "0, 1", "10, 35"],
+];
+function zerosPanel() {
+  const out = $("ex-zout");
+  const pic = $("ex-zpic");
+  try {
+    const f = $("ex-zf").value;
+    const pair = (t) => {
+      const v = t.split(",").map((x) => x.trim());
+      if (v.length !== 2) throw new RangeError("two numbers separated by a comma, please");
+      return v;
+    };
+    const R = S.rect(pair($("ex-zre").value), pair($("ex-zim").value));
+    const t0 = performance.now();
+    let poles = [];
+    let found;
+    let note = "";
+    let top = null;
+    try {
+      const sing = S.singularities(f, R);
+      poles = sing.singularities;
+      if (poles.some((p) => p.kind === "pole" || p.kind === "removable")) top = sing.numerator;
+    } catch (e) {
+      note = e.message;
+    }
+    if (top) {
+      // near a pole the function cannot be bounded, so its zeros are sought as zeros of the numerator,
+      // leaving out those that the denominator cancels
+      found = S.zeros(top, R, { maxCells: 4000 });
+      found.zeros = found.zeros.filter((z) => !poles.some((p) => p.enclosure.intersects(z.enclosure)));
+      for (const p of poles) if (p.kind === "removable" && p.order > 0) found.zeros.push({ enclosure: p.enclosure, multiplicity: p.order, simple: p.order === 1, boundary: false });
+      found.count = found.zeros.filter((z) => !z.boundary).reduce((t, z) => t + z.multiplicity, 0);
+    } else found = S.zeros(f, R, { maxCells: 4000 });
+    const ms = performance.now() - t0;
+    const [x0, x1, y0, y1] = [R.re.lo, R.re.hi, R.im.lo, R.im.hi].map((q) => q.toNumber());
+    const W = 320;
+    const H = Math.max(120, Math.min(480, Math.round((W * (y1 - y0)) / (x1 - x0))));
+    const pad = 14;
+    const sx = (x) => pad + ((x - x0) / (x1 - x0)) * (W - 2 * pad);
+    const sy = (y) => H - pad - ((y - y0) / (y1 - y0)) * (H - 2 * pad);
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "zeros and poles in the rectangle", style: "max-width:100%;height:auto;border:1px solid #8884;border-radius:8px" });
+    svg.append(svgEl("rect", { x: sx(x0), y: sy(y1), width: sx(x1) - sx(x0), height: sy(y0) - sy(y1), fill: "none", stroke: "currentColor", "stroke-opacity": "0.35" }));
+    if (y0 < 0 && y1 > 0) svg.append(svgEl("line", { x1: sx(x0), y1: sy(0), x2: sx(x1), y2: sy(0), stroke: "currentColor", "stroke-opacity": "0.2" }));
+    if (x0 < 0 && x1 > 0) svg.append(svgEl("line", { x1: sx(0), y1: sy(y0), x2: sx(0), y2: sy(y1), stroke: "currentColor", "stroke-opacity": "0.2" }));
+    for (const z of found.zeros) {
+      const [x, y] = z.enclosure.center.toNumbers();
+      svg.append(svgEl("circle", { cx: sx(x), cy: sy(y), r: z.simple ? 4 : 6, fill: z.simple ? "var(--accent, #c2410c)" : "none", stroke: "var(--accent, #c2410c)", "stroke-width": "2" }));
+      if (!z.simple) {
+        const label = svgEl("text", { x: sx(x) + 9, y: sy(y) + 4, "font-size": "11", fill: "currentColor" });
+        label.textContent = String(z.multiplicity);
+        svg.append(label);
+      }
+    }
+    for (const p of poles) {
+      if (p.kind === "removable") continue;
+      const [x, y] = p.enclosure.center.toNumbers();
+      const [cx, cy] = [sx(x), sy(y)];
+      for (const d of [1, -1]) svg.append(svgEl("line", { x1: cx - 5, y1: cy - 5 * d, x2: cx + 5, y2: cy + 5 * d, stroke: "#2563eb", "stroke-width": "2" }));
+    }
+    pic.replaceChildren(svg);
+    const rows = [];
+    found.zeros.forEach((z, k) => rows.push(...line(k === 0 ? "zeros" : "", () => `${z.enclosure.toString(16)}${z.simple ? "" : `   order ${z.multiplicity}`}${z.boundary ? "   (on the edge)" : ""}`)));
+    if (!found.zeros.length) rows.push(...line("zeros", () => "none"));
+    poles.forEach((p, k) => rows.push(...line(k === 0 ? "singularities" : "", () => `${p.kind}${p.order === null || p.kind === "removable" ? "" : ` of order ${p.order}`} at ${p.enclosure.toString(10)}`)));
+    rows.push(...line("proved complete", () => (found.complete ? `yes: exactly ${found.count} zero${found.count === 1 ? "" : "s"} inside` : `no: ${found.unresolved.length} part${found.unresolved.length === 1 ? "" : "s"} unsettled${poles.length ? " (around the singularities)" : ""}`)));
+    rows.push(...line("on the boundary", () => `zeros − poles = ${S.argumentPrinciple(f, R, { maxPieces: 3000 })} by the argument principle`));
+    if (note) rows.push(...line("note", () => note));
+    rows.push(...line("time", () => `${ms.toFixed(0)} ms`));
+    out.replaceChildren(h("dl", { class: "kv out" }, rows));
+  } catch (e) {
+    pic.replaceChildren();
+    out.replaceChildren(h("div", { class: "out err" }, e.message));
+  }
+}
+$("ex-zchips").append(...ZCHIPS.map(([f, re, im]) => h("button", { class: "chipbtn", onclick: () => {
+  $("ex-zf").value = f;
+  $("ex-zre").value = re;
+  $("ex-zim").value = im;
+  zerosPanel();
+} }, f)));
+$("ex-zgo").addEventListener("click", zerosPanel);
+$("ex-zf").addEventListener("keydown", (e) => e.key === "Enter" && zerosPanel());
+zerosPanel();
 </script>
 </body>
 </html>

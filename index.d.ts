@@ -10,7 +10,7 @@ export type ComplexLike = Complex | RationalLike | readonly [RationalLike, Ratio
 /** An exact number or an enclosure. */
 export type Enclosable = ComplexLike | Rect | Disc;
 
-export type ComplexErrorCode = "division-by-zero" | "branch-cut" | "branch-point" | "pole" | "precision" | "bad-option" | "no-quotient" | "not-a-rotation" | "too-large" | "bad-argument" | "degenerate";
+export type ComplexErrorCode = "division-by-zero" | "branch-cut" | "branch-point" | "pole" | "precision" | "bad-option" | "no-quotient" | "not-a-rotation" | "too-large" | "bad-argument" | "degenerate" | "singularity" | "zero-on-contour" | "unsupported";
 export class ComplexError extends Error {
   code: ComplexErrorCode;
   constructor(code: ComplexErrorCode, message: string);
@@ -175,17 +175,30 @@ export function polar(z: ComplexLike, bits?: number): { modulus: RationalInterva
 export function fromPolar(r: IntervalLike, theta: IntervalLike | { turns: RationalLike }, bits?: number): Rect;
 
 export function exp(z: Enclosable, opts?: Precision): Rect;
+export function exp(z: CTM): CTM;
 export function sin(z: Enclosable, opts?: Precision): Rect;
+export function sin(z: CTM): CTM;
 export function cos(z: Enclosable, opts?: Precision): Rect;
+export function cos(z: CTM): CTM;
 export function tan(z: Enclosable, opts?: Precision): Rect;
+export function tan(z: CTM): CTM;
 export function sinh(z: Enclosable, opts?: Precision): Rect;
+export function sinh(z: CTM): CTM;
 export function cosh(z: Enclosable, opts?: Precision): Rect;
+export function cosh(z: CTM): CTM;
 export function tanh(z: Enclosable, opts?: Precision): Rect;
+export function tanh(z: CTM): CTM;
 
 export function log(z: Enclosable, opts?: number | BranchOptions): Branched;
+/** Of a Taylor model: the model of the principal branch (or { branch: k }); refused when the disc reaches the cut. */
+export function log(z: CTM, opts?: { branch?: number }): CTM;
 export function sqrt(z: Enclosable, opts?: number | BranchOptions): Branched;
+export function sqrt(z: CTM, opts?: { branch?: number }): CTM;
 export function root(z: Enclosable, n: number, opts?: number | BranchOptions): Branched;
+export function root(z: CTM, n: number, opts?: { branch?: number }): CTM;
 export function pow(z: Enclosable, w: Enclosable, opts?: number | BranchOptions): Branched;
+export function pow(z: CTM, w: Enclosable | CTM): CTM;
+export function pow(z: Enclosable, w: CTM): CTM;
 export function roots(z: ComplexLike, n: number, opts?: Precision): Rect[];
 export function rootsOfUnity(n: number, bits?: number): Rect[];
 export function asin(z: Enclosable, opts?: number | BranchOptions): Branched;
@@ -296,11 +309,194 @@ export function sampleGrid(
   opts?: { re?: readonly [number, number]; im?: readonly [number, number]; width?: number; height?: number },
 ): { readonly kind: "estimated"; readonly width: number; readonly height: number; readonly re: [number, number]; readonly im: [number, number]; readonly values: Float64Array };
 
+// ---- Taylor models ----
+
+/** A function of z: text ("exp(z) - 3z^2"), a function of one Taylor model, or a syntax tree from analytic's parser. */
+export type AnalyticFunction = string | ((z: CTM) => CTM | Enclosable) | { type: string };
+export interface ModelOptions {
+  /** The degree kept (default 12). */
+  order?: number;
+  /** The working precision of the coefficients in binary digits (default 96). */
+  bits?: number;
+}
+/**
+ * A complex Taylor model: a polynomial P and a bound ε with |f(z) − P(z − c)| ≤ ε
+ * on the whole closed disc |z − c| ≤ r, where f is analytic.
+ */
+export class CTM {
+  readonly center: Complex;
+  readonly radius: Rational;
+  readonly order: number;
+  readonly bits: number;
+  readonly disc: Disc;
+  /** The proven bound ε. */
+  readonly error: Rational;
+  /** The polynomial's coefficients in powers of (z − c). */
+  readonly coefficients: Complex[];
+  /** The model of z itself on a disc. */
+  static z(disc: Disc | Rect | ComplexLike, opts?: ModelOptions): CTM;
+  static constant(disc: Disc | Rect | ComplexLike, value: Enclosable, opts?: ModelOptions): CTM;
+  add(o: CTM | Enclosable): CTM;
+  sub(o: CTM | Enclosable): CTM;
+  mul(o: CTM | Enclosable): CTM;
+  div(o: CTM | Enclosable): CTM;
+  neg(): CTM;
+  /** 1/f; refuses ("division-by-zero") when f may vanish on the disc. */
+  inv(): CTM;
+  pow(n: number | bigint): CTM;
+  scale(q: RationalLike): CTM;
+  /** A rectangle certain to contain f(z), for a point of the disc. */
+  at(z: ComplexLike): Rect;
+  /** A disc certain to contain every value of f on the model's disc. */
+  range(): Disc;
+  /** The number of zeros in the disc when Rouché's theorem decides it from the coefficients, else null. */
+  zeroCount(): number | null;
+  /** A model of f′ on a strictly smaller disc (default half the radius). */
+  derivative(radius?: RationalLike): CTM;
+  /** A rectangle certain to contain the integral of f from a to b, two points of the disc. */
+  integral(a: ComplexLike, b: ComplexLike): Rect;
+  toString(digits?: number): string;
+}
+export function taylorModel(f: AnalyticFunction, disc: Disc | Rect | ComplexLike, opts?: ModelOptions): CTM;
+
+// ---- contours, integrals, zeros ----
+
+export interface ContourPiece { readonly a: Complex; readonly b: Complex; readonly center: Complex | null; readonly ccw: boolean }
+export type ContourLike = Contour | Rect | Disc | readonly ComplexLike[];
+export class Contour {
+  readonly pieces: readonly ContourPiece[];
+  readonly start: Complex;
+  readonly end: Complex;
+  readonly closed: boolean;
+  static from(x: ContourLike): Contour;
+  static path(points: readonly ComplexLike[]): Contour;
+  static polygon(points: readonly ComplexLike[]): Contour;
+  static rectangle(r: Rect | ComplexLike): Contour;
+  static circle(center: ComplexLike, radius: RationalLike, opts?: { clockwise?: boolean }): Contour;
+  static arc(center: ComplexLike, from: ComplexLike, to: ComplexLike, opts?: { clockwise?: boolean }): Contour;
+  join(other: ContourLike): Contour;
+  reversed(): Contour;
+  /** Points along the contour as doubles, for drawing. */
+  sample(perPiece?: number): [number, number][];
+  /** How many times the closed contour goes round w. */
+  winding(w?: ComplexLike): number;
+  toString(): string;
+}
+export interface IntegralOptions extends ModelOptions {
+  /** The width to aim for (default 2^−40). */
+  tolerance?: RationalLike;
+  maxDepth?: number;
+  maxPieces?: number;
+}
+/** The integral of f along a contour, as a rectangle certain to contain it. */
+export function contourIntegral(f: AnalyticFunction, contour: ContourLike, opts?: IntegralOptions): Rect;
+/** The integral round a closed contour over 2πi: the sum of the residues inside. */
+export function residueSum(f: AnalyticFunction, contour: ContourLike, opts?: IntegralOptions): Rect;
+/** The winding number of f(contour) round 0: zeros minus poles inside, a proven whole number. */
+export function argumentPrinciple(f: AnalyticFunction, contour: ContourLike, opts?: IntegralOptions): number;
+export function countZeros(f: AnalyticFunction, contour: ContourLike, opts?: IntegralOptions): number;
+export interface FoundZero {
+  enclosure: Rect;
+  /** The total multiplicity of the zeros in the enclosure. */
+  multiplicity: number;
+  /** True for one simple zero. */
+  simple: boolean;
+  /** A disc in which the zeros of the enclosure are the only ones. */
+  isolating: Disc | null;
+  /** The enclosure straddles the region's edge: listed, not counted. */
+  boundary: boolean;
+  possibleDuplicate?: boolean;
+}
+export interface Unresolved { region: Rect; reason: string }
+export interface ZerosResult { zeros: FoundZero[]; count: number; complete: boolean; unresolved: Unresolved[] }
+export interface ZerosOptions {
+  /** Binary digits of each simple zero (default 64). */
+  bits?: number;
+  /** How closely two zeros are told apart (default 2^−20). */
+  tolerance?: RationalLike;
+  order?: number;
+  modelBits?: number;
+  maxCells?: number;
+}
+/** The zeros of an analytic f in a rectangle, isolated and counted with multiplicity. */
+export function zeros(f: AnalyticFunction, region: Rect | ComplexLike, opts?: ZerosOptions): ZerosResult;
+
+// ---- residues ----
+
+export interface LaurentSeries {
+  readonly center: Complex;
+  readonly radius: Rational;
+  readonly from: number;
+  readonly to: number;
+  readonly coefficients: readonly Rect[];
+  coefficient(n: number): Rect;
+  readonly principalPart: { n: number; value: Rect; nonzero: boolean }[];
+  toString(digits?: number): string;
+}
+export function laurent(f: AnalyticFunction, center: ComplexLike, radius: RationalLike, opts?: IntegralOptions & { from?: number; to?: number }): LaurentSeries;
+export function residue(f: AnalyticFunction, point: Enclosable, opts?: IntegralOptions & { radius?: RationalLike }): Rect;
+export interface Singularity {
+  enclosure: Rect;
+  kind: "pole" | "removable" | "essential" | "branch point" | "undetermined";
+  /** A pole's order; for a removable singularity the order of the zero left over; otherwise null. */
+  order: number | null;
+  note: string;
+  boundary?: boolean;
+}
+/** The singularities of a formula (text) in a rectangle, with their kinds. */
+export function singularities(f: string | { type: string }, region: Rect | ComplexLike, opts?: ZerosOptions): { singularities: Singularity[]; complete: boolean; unresolved: Unresolved[]; numerator: string; denominator: string };
+export interface Step { title: string; detail: string }
+export interface PoleRecord { enclosure: Rect; order: number; taken: boolean; residue: Rect | null }
+export interface Bounds { lo: Rational; hi: Rational }
+export interface RealIntegral {
+  readonly value: Rect;
+  /** The interval for a real integrand. */
+  readonly real?: Bounds;
+  /** With `fourier`: ∫ f cos(ax) and ∫ f sin(ax), for f real on the real axis. */
+  readonly cos?: Bounds;
+  readonly sin?: Bounds;
+  readonly poles: PoleRecord[];
+  readonly steps: Step[];
+}
+/** ∫ P(x)/Q(x) dx over the real line (times e^(iax) with `fourier: a`) by residues, with the steps. */
+export function realLineIntegral(f: string | { type: string }, opts?: { fourier?: RationalLike; bits?: number; variable?: string; tolerance?: RationalLike }): RealIntegral;
+/** ∫₀^2π of a rational function of cos t and sin t by residues, with the steps. */
+export function trigIntegral(f: string | { type: string }, opts?: { bits?: number; variable?: string; tolerance?: RationalLike }): RealIntegral;
+
+// ---- gamma and zeta ----
+
+/** Γ(z). A point or an enclosure gives a Rect; a Taylor model gives a model. Refuses ("pole") at 0, −1, −2, … */
+export function gamma(z: Enclosable, opts?: number | { bits?: number }): Rect;
+export function gamma(z: CTM): CTM;
+/** 1/Γ(z), entire. */
+export function rgamma(z: Enclosable, opts?: number | { bits?: number }): Rect;
+export function rgamma(z: CTM): CTM;
+/** log Γ(z) for Re z > 0, the branch real on the positive axis. */
+export function logGamma(z: Enclosable, opts?: number | { bits?: number }): Rect;
+export function logGamma(z: CTM): CTM;
+/** The Riemann zeta function. Refuses ("pole") at s = 1. */
+export function zeta(s: Enclosable, opts?: number | { bits?: number }): Rect;
+export function zeta(s: CTM): CTM;
+/** (s − 1)ζ(s), entire. */
+export function zetaTimesSMinus1(s: Enclosable, opts?: number | { bits?: number }): Rect;
+export function zetaTimesSMinus1(s: CTM): CTM;
+export interface ZetaZero {
+  /** The interval holding the zero's imaginary part. */
+  t: Bounds;
+  enclosure: Rect;
+  multiplicity: number;
+  /** Proved to have real part exactly 1/2. */
+  onCriticalLine: boolean;
+  boundary: boolean;
+}
+/** The zeros of ζ with t1 < Im s < t2, each checked to lie on the critical line. */
+export function zetaZeros(t1: RationalLike, t2: RationalLike, opts?: { bits?: number; order?: number; tolerance?: RationalLike; maxCells?: number }): { zeros: ZetaZero[]; count: number; complete: boolean; allOnCriticalLine: boolean; unresolved: Unresolved[] };
+
 export interface PlannedPhase {
   phase: number;
   contents: string;
   /** Rough size in source lines, as text ("1,200", or "600, plus 800 in graphics"). */
   estimate: string;
 }
-/** What is still planned: phases 3, 4 and 6. */
+/** What is still planned: nothing, every phase is built; the list is empty. */
 export const plan: readonly PlannedPhase[];
