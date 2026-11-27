@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `cauchyRiemann(u, v)`: checks the Cauchy–Riemann equations for f = u + iv
+  given as formulas in x and y, with f′ when they hold and a certified
+  witness point when they fail.
+
 ## 0.3.0
 
 Phases 3, 4 and 6 of the roadmap, which completes it for this package.

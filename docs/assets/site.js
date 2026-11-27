@@ -1,8 +1,8 @@
 // Shared page furniture for the complex docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./complex.js?v=742e5c1509";
-import { mountRunboxes } from "./runbox.js?v=742e5c1509";
+import * as A from "./complex.js?v=a78e720b44";
+import { mountRunboxes } from "./runbox.js?v=a78e720b44";
 
 export { A };
 
