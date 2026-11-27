@@ -184,25 +184,29 @@ function cosRect(r, bits) {
   // cos(x + iy) = cos x cosh y − i sin x sinh y
   return new Rect(I.mul(F("cos", r.re, bits), F("cosh", r.im, bits)), I.neg(I.mul(F("sin", r.re, bits), F("sinh", r.im, bits))));
 }
-const single = (f) => (z, opts) => {
+// Taylor models (taylor.js) register here, so that exp(model) and the rest work on them.
+let modelHook = null;
+export const _setModelHook = (h) => (modelHook = h);
+const single = (f, name) => (z, opts) => {
+  if (modelHook?.is(z)) return modelHook.apply(name, [z]);
   const p = plan(z, opts);
   return p.finish(f(toRect(z), p.work));
 };
 /** e^z. */
-export const exp = single(expRect);
-export const sin = single(sinRect);
-export const cos = single(cosRect);
+export const exp = single(expRect, "exp");
+export const sin = single(sinRect, "sin");
+export const cos = single(cosRect, "cos");
 /** sinh z = −i sin(iz). */
-export const sinh = single((r, b) => sinRect(r.timesI(), b).timesI().neg());
+export const sinh = single((r, b) => sinRect(r.timesI(), b).timesI().neg(), "sinh");
 /** cosh z = cos(iz). */
-export const cosh = single((r, b) => cosRect(r.timesI(), b));
+export const cosh = single((r, b) => cosRect(r.timesI(), b), "cosh");
 const quotient = (num, den, name) => (r, b) => {
   const d = den(r, b);
   if (d.containsZero()) refuse("pole", `${name}: the enclosure ${r} may contain a pole`);
   return num(r, b).div(d);
 };
-export const tan = single(quotient(sinRect, cosRect, "tan"));
-export const tanh = single((r, b) => quotient(sinRect, cosRect, "tanh")(r.timesI(), b).timesI().neg());
+export const tan = single(quotient(sinRect, cosRect, "tan"), "tan");
+export const tanh = single((r, b) => quotient(sinRect, cosRect, "tanh")(r.timesI(), b).timesI().neg(), "tanh");
 
 // ---- log, roots, powers ---------------------------------------------------------------------
 
@@ -218,6 +222,7 @@ const addTurns = (v, k, bits) => (k ? v.add(new Rect(pt(ZERO), I.scale(piIv(bits
  * negative real axis; { branch: k } adds 2πik.
  */
 export function log(z, opts) {
+  if (modelHook?.is(z)) return modelHook.apply("log", [z, opts]);
   return withCut("log", z, opts, { cut: NEG_AXIS, touches: touchesNegativeAxis, sides: REAL_SIDES, evalSide: (r, side, bits) => logRect(r, bits, side), convention: () => "above", shift: addTurns });
 }
 
@@ -241,6 +246,7 @@ const turnRoot = (n) => (v, k, bits) => {
  * multiplies it by e^(2πik/n). Exact when the root is a complex rational.
  */
 export function root(z, n, opts) {
+  if (modelHook?.is(z)) return modelHook.apply("root", [z, n, opts]);
   if (!Number.isInteger(n) || n < 1) throw new RangeError("root needs a positive whole number n");
   const o = typeof opts === "object" && opts ? opts : {};
   if (n === 2 && exactInput(z) && o.side) {
@@ -297,6 +303,7 @@ export function rootsOfUnity(n, bits = 64) {
  * the branch of the logarithm matters, and the result reports it the way log does.
  */
 export function pow(z, w, opts) {
+  if (modelHook?.is(z) || modelHook?.is(w)) return modelHook.apply("pow", [z, w, opts]);
   const o = typeof opts === "object" && opts ? opts : {};
   const wr = toRect(w);
   if (wr.isPoint && wr.center.isReal() && wr.center.re.denominator === 1n) {

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Residues and Laurent series · RatMath Complex</title>
+<meta name="description" content="Residues, Laurent coefficients and the classification of isolated singularities in @ratmath/complex, each as a proven enclosure or a proven count.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Complex analysis</div>
+<h1>Residues and Laurent series</h1>
+<p class="lede">Near an isolated singularity a function is a series in positive and negative powers. The coefficient of \(1/(z - c)\) is the residue, the only part that survives integration round the point. Here the coefficients come as proven rectangles, and the kind of singularity comes from proven counts.</p>
+<pre><code>import { laurent, residue, singularities, rect } from "@ratmath/complex";
+
+residue("exp(z)/z^3", 0);            // 0.5 ± 3.1e-14
+residue("1/(z^2 + 1)", "i");         // 0 - 0.5i
+residue("exp(1/z)", 0);              // 1, at an essential singularity
+
+laurent("exp(z)/z^2", 0, 1, { from: -3, to: 2 }).toString();
+// a_-3 = 0 ± 2.9e-14      a_-2 = 1      a_-1 = 1
+// a_0 = 0.5               a_1 = 0.1666666667   a_2 = 0.0416666667
+
+singularities("exp(z)/((z^2 + 1)^2 * sin(z))", rect([-2, 2], [-2, 2])).singularities;
+// pole of order 2 at −i, pole of order 1 at 0, pole of order 2 at i</code></pre>
+<h2>Laurent coefficients</h2>
+<p>If \(f\) is analytic in an annulus about \(c\), then there</p>
+\[ f(z) = \sum_{n=-\infty}^{\infty} a_n (z - c)^n, \qquad a_n = \frac{1}{2\pi i}\oint \frac{f(z)}{(z - c)^{n+1}}\,dz, \]
+<p>the integral taken round any circle in the annulus. <code>laurent(f, c, radius)</code> computes these as <a href="contour-integrals.html">contour integrals</a>, all of them over the same subdivision of the circle. The series belongs to the annulus, not to the function: a different radius that crosses a singularity gives a different series, as the code box shows.</p>
+
+<h2>Residues</h2>
+<p><code>residue(f, point)</code> is \(a_{-1}\): the integral round a small circle (radius 1/4 unless given) divided by \(2\pi i\). The circle must hold no other singularity. For a formula given as text that is checked: the zeros of the formula's denominator are counted inside the circle and inside a far smaller one, and if the counts differ the call is refused with the advice to use a smaller radius. The point may be exact, or an enclosure of the kind <code>zeros</code> returns.</p>
+
+<h2>Kinds of singularity</h2>
+<p>An isolated singularity is <em>removable</em> when the function stays bounded near it, a <em>pole of order m</em> when \((z - c)^m f\) does, and <em>essential</em> otherwise. No amount of arithmetic near the point can tell a coefficient that is 0 from one that is merely tiny, so this cannot be decided by sampling. It can be decided from the formula.</p>
+<p><code>singularities(f, rect)</code> splits the formula into a numerator and a denominator by the rules of fractions, with \(\tan = \sin/\cos\). Then:</p>
+<ul>
+<li>the zeros of the denominator are found, with multiplicity, by <a href="zeros.html"><code>zeros</code></a>;</li>
+<li>round each one, the zeros of the numerator are counted on a small frame. None means a pole of the denominator's order. If the numerator vanishes there too, the difference of the two counts is the order of the pole, or shows the singularity to be removable;</li>
+<li>where an entire function such as exp is applied to something with a pole, the singularity is essential;</li>
+<li>where a logarithm or root is applied to something that vanishes, there is a branch point, which is not isolated at all.</li>
+</ul>
+<p>One thing is taken on trust and said so in each entry's <code>note</code>: that a numerator zero and a denominator zero found inside the same box of width 2⁻²⁴ are the same point.</p>
+<div class="tablewrap"><table class="ref">
+<tr><th>call</th><th>returns</th></tr>
+<tr><td>laurent(f, center, radius, { from, to })</td><td><code>coefficient(n)</code>, <code>coefficients</code>, <code>principalPart</code> (the negative powers, those proved non-zero marked), <code>toString()</code></td></tr>
+<tr><td>residue(f, point, { radius })</td><td>A Rect</td></tr>
+<tr><td>singularities(f, rect)</td><td><code>{ singularities: [{ enclosure, kind, order, note }], complete, unresolved, numerator, denominator }</code>; kind is "pole", "removable", "essential", "branch point" or "undetermined"</td></tr>
+</table></div>
+<template data-runbox>
+// The three kinds, by their principal parts.
+PRINT("sin(z)/z at 0:    ", laurent("sin(z)/z", 0, 1, { from: -3, to: -1 }).coefficients.map((c) =&gt; c.containsZero() ? "0" : c.toString(4)).join("  "));
+PRINT("exp(z)/z^2 at 0:  ", laurent("exp(z)/z^2", 0, 1, { from: -3, to: -1 }).coefficients.map((c) =&gt; c.containsZero() ? "0" : c.toString(4)).join("  "));
+PRINT("exp(1/z) at 0:    ", laurent("exp(1/z)", 0, 1, { from: -3, to: -1 }).coefficients.map((c) =&gt; c.toString(4)).join("  "));
+
+// The same decided from the formulas.
+for (const f of ["sin(z)/z", "(1 - cos(z))/z^5", "exp(1/z)", "tan(z)/z^2", "log(z)/(z - 1/2 - i/2)"]) {
+  const s = singularities(f, rect([-1, 1], [-1, 1]));
+  PRINT(f.padEnd(24), "→", s.singularities.map((x) =&gt; x.kind + (x.kind === "pole" ? " of order " + x.order : "")).join(", "));
+}
+
+// One function, two annuli, two series.
+const f = "1/((z - 1)*(z - 2))";
+PRINT("inside |z| &lt; 1:    a_-1, a_0, a_1 =", [-1, 0, 1].map((n) =&gt; laurent(f, 0, "1/2", { from: -1, to: 1 }).coefficient(n).toString(4)).join(",  "));
+PRINT("between 1 and 2:   a_-1, a_0, a_1 =", [-1, 0, 1].map((n) =&gt; laurent(f, 0, "3/2", { from: -1, to: 1 }).coefficient(n).toString(4)).join(",  "));
+
+// A residue at an essential singularity, and a refused circle.
+PRINT("Res exp(1/z) at 0 =", residue("exp(1/z)", 0).toString());
+try { residue("1/(z*(z - 1))", 0, { radius: 2 }); } catch (e) { PRINT(e.code + ":", e.message); }
+residue("1/(z*(z - 1))", 0, { radius: "1/2" }).toString()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

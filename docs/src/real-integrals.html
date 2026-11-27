@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Real integrals by residues · RatMath Complex</title>
+<meta name="description" content="Real definite integrals evaluated by the residue theorem in @ratmath/complex, with the argument shown step by step and the value as a proven interval.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Complex analysis</div>
+<h1>Real integrals by residues</h1>
+<p class="lede">Some integrals over the real line are easiest in the complex plane: close the path with a large semicircle, show the semicircle contributes nothing, and add up residues. Two families are done here from start to finish, with each step of the argument written out and the value proved.</p>
+<pre><code>import { realLineIntegral, trigIntegral } from "@ratmath/complex";
+
+const r = realLineIntegral("1/(x^2 + 1)^2");
+r.real;                    // an interval around π/2 = 1.5707963267948966, 2.7e-20 wide
+r.steps;                   // the argument, as { title, detail }
+
+realLineIntegral("x/(x^2 + 1)", { fourier: 2 }).sin;   // ∫ x sin 2x/(x² + 1) dx = π/e²
+
+trigIntegral("1/(2 + cos(t))").real;                   // 2π/√3 = 3.62759872847</code></pre>
+<h2>Rational functions over the whole line</h2>
+<p>Let \(f = P/Q\) with \(\deg Q \ge \deg P + 2\) and no real root of \(Q\). Integrate round the segment \([-R, R]\) and the semicircle above it. On the semicircle \(|f(z)| \le C/R^2\), so that part is at most \(\pi C/R\) and vanishes as \(R\) grows. What is left is</p>
+\[ \int_{-\infty}^{\infty} f(x)\,dx = 2\pi i \sum_{\operatorname{Im} z_k &gt; 0} \operatorname{Res}_{z_k} f. \]
+<p>The steps the function takes:</p>
+<ol>
+<li>The formula is turned into exact polynomials \(P\) and \(Q\) and common factors are cancelled, so a removable singularity on the real axis does no harm.</li>
+<li>The degrees are compared; if the integral does not converge the call is refused and says why.</li>
+<li>Every root of \(Q\) is found by <a href="zeros.html"><code>zeros</code></a> in a square that Cauchy's bound proves large enough, and the count is checked against the degree.</li>
+<li>Each root must be provably above or below the real axis. One that is on it, or too close to tell, is refused: the integral does not exist as it stands.</li>
+<li>At a simple pole the residue is \(P/Q'\), evaluated on the root's enclosure. At a multiple pole it is a <a href="contour-integrals.html">contour integral</a> round a small circle.</li>
+</ol>
+
+<h2>Fourier integrals</h2>
+<p>With <code>{ fourier: a }</code> the integrand is \(f(x)e^{iax}\). For \(a &gt; 0\) the factor \(e^{iaz}\) decays in the upper half-plane, and Jordan's lemma makes the semicircle vanish as soon as \(\deg Q \ge \deg P + 1\). For \(a &lt; 0\) the path closes below instead. When \(f\) is real on the real axis the real and imaginary parts of the result are the cosine and sine integrals, returned as <code>cos</code> and <code>sin</code>.</p>
+
+<h2>Trigonometric integrals over a period</h2>
+<p>For a rational function \(R\) of \(\cos t\) and \(\sin t\), put \(z = e^{it}\). Then \(\cos t = (z + 1/z)/2\), \(\sin t = (z - 1/z)/(2i)\), \(dt = dz/(iz)\), and as \(t\) runs from 0 to \(2\pi\) the point \(z\) runs once round the unit circle:</p>
+\[ \int_0^{2\pi} R(\cos t, \sin t)\,dt = \oint_{|z|=1} g(z)\,dz = 2\pi i \sum_{|z_k| &lt; 1} \operatorname{Res}_{z_k} g. \]
+<p><code>trigIntegral</code> makes the substitution, reduces \(g\) to a quotient of polynomials, and sums the residues at the poles proved to be inside the circle. <code>cos(2t)</code> and the like are understood. A pole on the circle means the integrand is unbounded, and is refused.</p>
+<div class="tablewrap"><table class="ref">
+<tr><th>call</th><th>returns</th></tr>
+<tr><td>realLineIntegral(f, { fourier, bits, variable })</td><td><code>{ value, real, cos, sin, poles, steps }</code>. <code>value</code> is a Rect; <code>real</code> the interval for a real integrand; <code>cos</code> and <code>sin</code> with <code>fourier</code>.</td></tr>
+<tr><td>trigIntegral(f, { bits, variable })</td><td><code>{ value, real, poles, steps }</code></td></tr>
+<tr><td>poles</td><td>Every pole: <code>{ enclosure, order, taken, residue }</code></td></tr>
+<tr><td>steps</td><td>The argument: <code>[{ title, detail }]</code></td></tr>
+</table></div>
+<p>The formula's variable is x (or z) for the line and t (or theta, or x) for the circle; name another with <code>variable</code>. Coefficients must be exact, which here means rational numbers and i.</p>
+<template data-runbox>
+// The whole argument for one integral.
+const r = realLineIntegral("x^2/(x^4 + 1)");
+for (const s of r.steps) PRINT(s.title + ":\n   " + s.detail);
+PRINT("π/√2 =", (Math.PI / Math.SQRT2).toString());
+PRINT("");
+
+// A table of classics
+const show = (label, interval, exact) =&gt; PRINT(label.padEnd(34), ((interval.lo.toNumber() + interval.hi.toNumber()) / 2).toFixed(15), "  ", exact);
+show("∫ dx/(x² + 1)", realLineIntegral("1/(x^2 + 1)").real, "π");
+show("∫ dx/(x² + 1)²", realLineIntegral("1/(x^2 + 1)^2").real, "π/2");
+show("∫ dx/(x⁴ + 5x² + 4)", realLineIntegral("1/(x^4 + 5x^2 + 4)").real, "π/6");
+show("∫ cos x/(x² + 1) dx", realLineIntegral("1/(x^2 + 1)", { fourier: 1 }).cos, "π/e");
+show("∫ x sin 2x/(x² + 1) dx", realLineIntegral("x/(x^2 + 1)", { fourier: 2 }).sin, "π/e²");
+show("∫₀^2π dt/(2 + cos t)", trigIntegral("1/(2 + cos(t))").real, "2π/√3");
+show("∫₀^2π cos⁴t dt", trigIntegral("cos(t)^4").real, "3π/4");
+show("∫₀^2π cos 2t/(5 − 4 cos t) dt", trigIntegral("cos(2t)/(5 - 4cos(t))").real, "π/6");
+
+// What cannot be done is refused with the reason.
+for (const f of ["1/(x^2 - 1)", "x/(x^2 + 1)"]) {
+  try { realLineIntegral(f); } catch (e) { PRINT(f.padEnd(14), "→", e.message); }
+}
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

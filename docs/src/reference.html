@@ -25,7 +25,7 @@
 <tr><td><code>complex(re, im)</code></td><td>A <code>Complex</code> from text (<code>"3 - 4i"</code>, <code>"(1 + i)^8"</code>), two parts, a <code>[re, im]</code> pair or a real number in any form Core reads.</td></tr>
 <tr><td><code>Complex</code></td><td><code>.re</code>, <code>.im</code> (Core Rationals); <code>add sub mul div neg conj inv pow(n) scale(q)</code>; <code>norm()</code> = |z|²; <code>exactModulus()</code> and <code>exactSqrt()</code> (null when irrational); <code>equals isZero isReal isImaginary isGaussianInteger</code>; <code>toString toTeX toJSON toNumbers</code>. <code>Complex.parse(text)</code>, <code>Complex.from(x)</code>, <code>Complex.ZERO ONE I</code>.</td></tr>
 <tr><td><code>CQ</code></td><td>The field \(\mathbb{Q}(i)\) as a RatMath field object, for linalg and structures.</td></tr>
-<tr><td><code>ComplexError</code></td><td>Thrown with a <code>code</code>: <code>division-by-zero</code>, <code>branch-cut</code>, <code>branch-point</code>, <code>pole</code>, <code>precision</code>, <code>bad-option</code>; and from the cayley entry point <code>no-quotient</code>, <code>not-a-rotation</code>, <code>too-large</code>.</td></tr>
+<tr><td><code>ComplexError</code></td><td>Thrown with a <code>code</code>: <code>division-by-zero</code>, <code>branch-cut</code>, <code>branch-point</code>, <code>pole</code>, <code>precision</code>, <code>bad-option</code>, <code>bad-argument</code>, <code>singularity</code>, <code>zero-on-contour</code>, <code>unsupported</code>; and from the cayley entry point <code>no-quotient</code>, <code>not-a-rotation</code>, <code>too-large</code>.</td></tr>
 </table></div>
 <h2>Enclosures</h2>
 <div class="tablewrap"><table class="ref">
@@ -75,6 +75,37 @@
 <tr><td>gridImage, sampleGrid</td><td>Data for pictures: exact image circles of a grid; sampled values (estimated).</td></tr>
 </table></div>
 
+<h2>Taylor models</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>taylorModel(f, disc, opts)</code></td><td>The model of f on a disc: a polynomial and a proven bound on \(|f - P|\) there. <code>f</code> is text in z or a function of one model. Options <code>order</code> (12), <code>bits</code> (96). Refuses (<code>division-by-zero</code>, <code>branch-point</code>, <code>branch-cut</code>, <code>precision</code>) when a hypothesis cannot be shown.</td></tr>
+<tr><td><code>CTM</code></td><td><code>CTM.z(disc, opts)</code>, <code>CTM.constant(disc, value, opts)</code>; <code>add sub mul div neg inv pow(n) scale(q)</code>; <code>.center .radius .order .bits .disc .error .coefficients</code>; <code>at(z)</code> (Rect), <code>range()</code> (Disc), <code>zeroCount()</code>, <code>derivative(radius)</code>, <code>integral(a, b)</code>, <code>toString()</code>. The package's <code>exp log sqrt root pow sin cos tan sinh cosh tanh gamma rgamma logGamma zeta</code> accept a model and return one.</td></tr>
+</table></div>
+<h2>Contours, integrals, zeros</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>Contour</code></td><td><code>Contour.path(points)</code>, <code>polygon(points)</code>, <code>rectangle(rect)</code>, <code>circle(center, radius, { clockwise })</code>, <code>arc(center, from, to, { clockwise })</code>, <code>from(x)</code>; <code>.pieces .start .end .closed</code>; <code>join(other) reversed() winding(w) sample(perPiece)</code>.</td></tr>
+<tr><td><code>contourIntegral(f, contour, opts)</code></td><td>A Rect certain to contain the integral. Options <code>tolerance</code> (2⁻⁴⁰), <code>order</code>, <code>bits</code>, <code>maxDepth</code>, <code>maxPieces</code>. Refuses with <code>singularity</code> when f cannot be bounded somewhere on the contour.</td></tr>
+<tr><td><code>residueSum(f, contour, opts)</code></td><td>The integral round a closed contour over 2πi.</td></tr>
+<tr><td><code>argumentPrinciple(f, contour, opts)</code>, <code>countZeros</code></td><td>The winding number of f(contour) round 0, a proven whole number: zeros minus poles inside. Refuses with <code>zero-on-contour</code>.</td></tr>
+<tr><td><code>zeros(f, rect, opts)</code></td><td><code>{ zeros: [{ enclosure, multiplicity, simple, isolating, boundary }], count, complete, unresolved }</code>. Options <code>bits</code> (64), <code>tolerance</code> (2⁻²⁰), <code>order</code>, <code>modelBits</code>, <code>maxCells</code>.</td></tr>
+</table></div>
+<h2>Residues and real integrals</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>laurent(f, center, radius, { from, to })</code></td><td>Laurent coefficients for the annulus holding the circle: <code>coefficient(n)</code>, <code>coefficients</code>, <code>principalPart</code>, <code>toString()</code>.</td></tr>
+<tr><td><code>residue(f, point, { radius })</code></td><td>The residue at an exact point or an enclosure, a Rect. For text the circle is checked to hold no other zero of the denominator.</td></tr>
+<tr><td><code>singularities(f, rect, opts)</code></td><td>For a formula as text: <code>{ singularities: [{ enclosure, kind, order, note }], complete, unresolved, numerator, denominator }</code> with kind <code>"pole"</code>, <code>"removable"</code>, <code>"essential"</code>, <code>"branch point"</code> or <code>"undetermined"</code>.</td></tr>
+<tr><td><code>realLineIntegral(f, { fourier, bits, variable })</code></td><td>∫ P/Q over the real line (times e^(iax) with <code>fourier: a</code>) by residues: <code>{ value, real, cos, sin, poles, steps }</code>.</td></tr>
+<tr><td><code>trigIntegral(f, { bits, variable })</code></td><td>∫₀^2π of a rational function of cos t and sin t: <code>{ value, real, poles, steps }</code>.</td></tr>
+</table></div>
+<h2>Gamma and zeta</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>gamma(z, opts)</code>, <code>rgamma(z, opts)</code>, <code>logGamma(z, opts)</code></td><td>Γ(z), the entire 1/Γ(z), and log Γ(z) for Re z &gt; 0 (the branch real on the positive axis). A point, Rect or Disc gives a Rect; a model gives a model. <code>gamma</code> refuses with <code>pole</code> at 0, −1, −2, …</td></tr>
+<tr><td><code>zeta(s, opts)</code>, <code>zetaTimesSMinus1(s, opts)</code></td><td>ζ(s), and the entire (s − 1)ζ(s). <code>zeta</code> refuses with <code>pole</code> at 1.</td></tr>
+<tr><td><code>zetaZeros(t1, t2, opts)</code></td><td>The zeros of ζ with t1 &lt; Im s &lt; t2: <code>{ zeros: [{ t, enclosure, multiplicity, onCriticalLine, boundary }], count, complete, allOnCriticalLine, unresolved }</code>.</td></tr>
+</table></div>
 <h2>@ratmath/complex/cayley: the algebras</h2>
 <div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>

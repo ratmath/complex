@@ -52,15 +52,32 @@ fourSquares(2026);                        // [23n, 23n, 22n, 22n]
   `chordal2`; `cayley`, `discAutomorphism`, `halfPlaneToDisc`, `joukowski`,
   `regions`; picture data `gridImage` (exact) and `sampleGrid` (estimated).
 
-## Planned
+- **Taylor models**: `taylorModel`, `CTM`: a polynomial and a proven bound on
+  what it leaves out, on a whole disc; `at`, `range`, `derivative`, `integral`,
+  `zeroCount`.
+- **Contour integrals**: `Contour` (segments and arcs through exact points),
+  `contourIntegral`, `residueSum`, as rectangles certain to contain the answer.
+- **Zeros**: `argumentPrinciple`, `countZeros` (a proven whole number) and
+  `zeros`, which isolates every zero in a rectangle with its multiplicity.
+- **Residues**: `laurent`, `residue`, `singularities` (pole with order,
+  removable, essential, branch point).
+- **Real integrals by residues**: `realLineIntegral`, `trigIntegral`, with the
+  steps of the argument.
+- **Gamma and zeta**: `gamma`, `rgamma`, `logGamma`, `zeta`,
+  `zetaTimesSMinus1` on points, enclosures and models; `zetaZeros` finds the
+  zeros of ζ and proves each to lie on the critical line.
 
-From the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex).
+```js
+import { contourIntegral, Contour, zeros, rect, realLineIntegral, zetaZeros } from "@ratmath/complex";
 
-| Phase | Contents |
-|---|---|
-| 3 | Complex Taylor models; contour integrals; argument principle and zero isolation |
-| 4 | Residues, Laurent series, singularities, real integrals by residues |
-| 6 | Complex gamma and zeta |
+String(contourIntegral("1/z", Contour.circle(0, 1)));         // "0 + 6.2831853072i ± 7.9e-17"
+zeros("exp(z) - 3z", rect([-1, 3], [-2, 2])).count;           // 2, proved
+realLineIntegral("1/(x^2 + 1)^2").steps;                      // the residue argument, step by step
+zetaZeros(10, 30).allOnCriticalLine;                          // true
+```
+
+Every phase of the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#3-a-complex-package-ratmathcomplex)
+for this package is built.
 
 It depends on Core and on analytic (certified real exp, log, sine, cosine and
 arctangent). Analytic is not on npm yet, so it is a git submodule under

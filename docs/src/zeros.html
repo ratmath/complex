@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zeros and the argument principle · RatMath Complex</title>
+<meta name="description" content="Counting and isolating zeros of analytic functions in @ratmath/complex: the argument principle as a proven whole number, and every zero in a rectangle found with its multiplicity.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Complex analysis</div>
+<h1>Zeros and the argument principle</h1>
+<p class="lede">How many zeros does a function have inside a contour? The answer is a whole number, and a whole number can be proved by enclosing it in an interval narrower than 1. From counting comes finding: every zero in a rectangle, each in its own small box, with its multiplicity.</p>
+<pre><code>import { argumentPrinciple, countZeros, zeros, Contour, rect } from "@ratmath/complex";
+
+argumentPrinciple("z^3 - 1", Contour.circle(0, 2));   // 3
+argumentPrinciple("tan(z)", Contour.circle(0, 2));    // -1: one zero, two poles
+
+const r = zeros("exp(z) - 3z", rect([-1, 3], [-2, 2]));
+r.count;                 // 2, proved
+r.zeros[0].enclosure;    // 0.61906128673594511 + 0i ± 2.6e-23
+r.zeros[1].enclosure;    // 1.5121345516578425 + 0i ± 1.1e-22</code></pre>
+<h2>The argument principle</h2>
+<p>For \(f\) meromorphic inside a simple closed contour \(C\) and with no zero or pole on it,</p>
+\[ \frac{1}{2\pi i}\oint_C \frac{f'(z)}{f(z)}\,dz = Z - P, \]
+<p>the number of zeros inside minus the number of poles, each counted with its multiplicity. The left side is the number of times the image curve \(f(C)\) winds round 0, and that is how it is computed here, with no derivative.</p>
+<p>Cover a piece of \(C\) with a disc and take a <a href="taylor-models.html">Taylor model</a> of \(f\) there. If the model's range is a disc that misses 0, then on that piece \(f\) stays inside a half-plane, its argument changes by less than half a turn, and the change is exactly the principal argument of \(f(\text{end})/f(\text{start})\). Those are enclosed, added up round the contour and divided by \(2\pi\). The total is an interval a tiny fraction wide around a whole number. Where the range does not miss 0 the piece is halved; a zero on the contour itself is refused and located.</p>
+
+<h2>Finding the zeros in a rectangle</h2>
+<p><code>zeros(f, rect)</code> cuts the rectangle into cells and settles each one with a model on the disc around it. Three proofs are tried.</p>
+<ul>
+<li><strong>No zero.</strong> The model's range misses 0.</li>
+<li><strong>Exactly k zeros (Rouché).</strong> If one coefficient of the model outweighs all the others and ε together, \(f\) has as many zeros in the disc as that one term, which is its index k. For k ≥ 2 the disc is then shrunk around the zeros' centroid for as long as it still holds all k.</li>
+<li><strong>Exactly one simple zero (Newton).</strong> For the disc \(D\) with centre \(c\), form \(N = c - f(c)/f'(D)\), where \(f'(D)\) is a disc holding every value of the derivative. Since \(f(z) = f(c) + (z - c)g\) with \(g\) in the convex hull of \(f'(D)\), every zero in \(D\) lies in \(N\). If \(N\) is inside \(D\) there is exactly one, and repeating the step shrinks its enclosure quadratically.</li>
+</ul>
+<p>A cell that none of these settles is cut in four. What is still unsettled at the tolerance is grouped and counted by the argument principle on a small frame.</p>
+
+<h2>What comes back</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>call</th><th>returns</th></tr>
+<tr><td>zeros(f, rect, opts)</td><td><code>{ zeros, count, complete, unresolved }</code></td></tr>
+<tr><td>zeros[k].enclosure</td><td>A Rect holding the zero (or the cluster)</td></tr>
+<tr><td>zeros[k].multiplicity, .simple</td><td>The total multiplicity in the enclosure. <code>simple</code> is true for one simple zero. Otherwise the enclosure holds either one zero of that order or several closer together than the working precision can separate, and the total is what is proved.</td></tr>
+<tr><td>zeros[k].isolating</td><td>A larger disc in which those are the only zeros</td></tr>
+<tr><td>zeros[k].boundary</td><td>True when the enclosure straddles the rectangle's edge; such zeros are listed but not counted</td></tr>
+<tr><td>count, complete</td><td>The proven number of zeros in the rectangle, when <code>complete</code> is true</td></tr>
+<tr><td>unresolved</td><td>Parts that could not be settled, with reasons: a singularity of f, or the work budget</td></tr>
+<tr><td>argumentPrinciple(f, contour), countZeros(f, contour)</td><td>The winding number of f(contour) round 0: zeros minus poles</td></tr>
+</table></div>
+<p>Options: <code>bits</code> (digits of each simple zero, default 64), <code>tolerance</code> (how closely two zeros are told apart, default 2⁻²⁰), <code>order</code>, <code>modelBits</code>, <code>maxCells</code>.</p>
+<p>The function must be analytic on the rectangle for the count to mean zeros. That is checked, not assumed: a cell on which no model can be built is reported in <code>unresolved</code>, so a pole inside leaves <code>complete</code> false and says where the trouble is.</p>
+<template data-runbox>
+// Every solution of cos z = z in a 20 by 20 square. Only one is real.
+const r = zeros("cos(z) - z", rect([-10, 10], [-10, 10]));
+PRINT("zeros:", r.count, "  all settled:", r.complete);
+for (const z of r.zeros) PRINT("   ", z.enclosure.toString(18));
+PRINT("the same count from the boundary alone:", countZeros("cos(z) - z", rect([-10, 10], [-10, 10])));
+
+// A double zero is reported as one, with its multiplicity.
+const d = zeros("(z - 1/3)^2 * (z + 1)", rect([-2, 2], [-1, 1]));
+for (const z of d.zeros) PRINT(z.simple ? "simple zero at" : `zero of order ${z.multiplicity} in`, z.enclosure.toString(12));
+
+// Zeros minus poles
+PRINT("tan z inside |z| = 2:", argumentPrinciple("tan(z)", Contour.circle(0, 2)), " (zero at 0, poles at ±π/2)");
+
+// A pole in the region is noticed.
+const t = zeros("tan(z)", rect([-1, 2], [-1, 1]), { tolerance: "1/1000" });
+PRINT("tan z on [-1, 2] × [-1, 1]: found", t.zeros.length, "zero; complete:", t.complete);
+PRINT("   unresolved near", t.unresolved[0].region.toString(4));
+
+// The quintic z^5 − z + 1 has no solution in radicals. Here are its roots anyway.
+zeros("z^5 - z + 1", rect([-2, 2], [-2, 2])).zeros.map((z) =&gt; z.enclosure.toString(15))
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

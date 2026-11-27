@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gamma and zeta · RatMath Complex</title>
+<meta name="description" content="The gamma and Riemann zeta functions on the complex plane in @ratmath/complex, as proven enclosures, with the zeros of zeta isolated and shown to lie on the critical line.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Complex analysis</div>
+<h1>Gamma and zeta</h1>
+<p class="lede">The two functions the rest of analytic number theory leans on, at any complex argument and to any precision, as rectangles proved to contain the value. They are also functions of Taylor models, so they can be integrated round contours and searched for zeros like anything else in the package.</p>
+<pre><code>import { gamma, rgamma, logGamma, zeta, zetaZeros } from "@ratmath/complex";
+
+gamma(5);                      // 24 ± 5.4e-20
+gamma("1/2");                  // 1.7724538509 ± 1.7e-21, which is √π
+gamma("1 + i");                // 0.49801566812 - 0.1549498283i ± 4.2e-22
+gamma("1 + i", { bits: 160 }); // the same to fifty digits
+rgamma(-3);                    // exactly 0: 1/Γ is entire
+
+zeta(2);                       // 1.64493406685 ± 1.7e-21, π²/6
+zeta(-1);                      // -0.083333333333, which is −1/12
+zeta("1/2 + 14i");             // 0.02224114261 - 0.103258123266i
+
+zetaZeros(10, 35);             // five zeros, each proved to have real part exactly 1/2</code></pre>
+<h2>Gamma</h2>
+<p>Three classical facts, each with a remainder that can be bounded.</p>
+<ul>
+<li><strong>Stirling's series</strong>, for \(z\) far to the right:
+\[ \log\Gamma(z) = (z - \tfrac12)\log z - z + \tfrac12\log 2\pi + \sum_{k=1}^{n-1} \frac{B_{2k}}{2k(2k-1)z^{2k-1}} + R_n(z), \]
+where \(|R_n(z)|\) is at most \(\sec^{2n}(\tfrac12\arg z)\) times the first term left out.</li>
+<li><strong>The recurrence</strong> \(\Gamma(z + 1) = z\Gamma(z)\) moves any \(z\) far enough right for the series to reach the precision asked.</li>
+<li><strong>The reflection formula</strong> \(\Gamma(z)\Gamma(1 - z) = \pi/\sin \pi z\) handles the far left.</li>
+</ul>
+<p>The computation goes through \(1/\Gamma\), which is entire, so nothing is divided until the last step. <code>gamma</code> refuses at the poles 0, −1, −2, …; <code>rgamma</code> is 0 there. <code>logGamma</code>, for Re z &gt; 0, is the branch that is real on the positive axis, which is not always the principal logarithm of Γ(z).</p>
+
+<h2>Zeta</h2>
+<p>For Re s ≥ 0 the Euler–Maclaurin formula, with any \(N\) and \(m\):</p>
+\[ \zeta(s) = \sum_{n=1}^{N-1} n^{-s} + \frac{N^{1-s}}{s - 1} + \frac{N^{-s}}{2} + \sum_{k=1}^{m} \frac{B_{2k}}{(2k)!}\, s(s+1)\cdots(s+2k-2)\, N^{-s-2k+1} + R, \]
+\[ |R| \le \frac{|B_{2m}|}{(2m)!}\,\frac{|s(s+1)\cdots(s+2m-1)|}{\sigma + 2m - 1}\, N^{1-\sigma-2m}, \qquad \sigma = \operatorname{Re} s. \]
+<p>\(N\) and \(m\) are chosen so that the bound is below the precision wanted. To the left of Re s = 0 the functional equation \(\zeta(s) = 2^s\pi^{s-1}\sin(\pi s/2)\,\Gamma(1 - s)\,\zeta(1 - s)\) is used. As with gamma, the work is done on the entire function \((s - 1)\zeta(s)\), exported as <code>zetaTimesSMinus1</code>.</p>
+
+<h2>Enclosures in, models in</h2>
+<p>Give a <code>Rect</code> or a <code>Disc</code> and the result encloses every value over it. Give a <a href="taylor-models.html">Taylor model</a>, or write <code>gamma(z)</code> or <code>zeta(z)</code> in a formula, and the result is a model of the function on the disc, with the remainder bounds above taken over the whole disc. That is what lets the rest of the package work on them:</p>
+<pre><code>residue("gamma(z)", -3, { radius: "1/2" });    // -0.16666666667: the residue at −n is (−1)ⁿ/n!
+residue("zeta(z)", 1, { radius: "1/2" });      // 1
+singularities("gamma(z)", rect([-7/2, 1], [-1, 1]));   // simple poles at 0, −1, −2, −3
+countZeros("zeta(z)", rect([0, 1], [10, 30])); // 3</code></pre>
+<h2>The zeros of zeta, and the Riemann hypothesis for each</h2>
+<p><code>zetaZeros(t1, t2)</code> finds every zero with imaginary part between t1 and t2. The search is <a href="zeros.html"><code>zeros</code></a> on the strip 0 ≤ Re s ≤ 1, so each zero is isolated, proved simple, and the count is proved complete.</p>
+<p>Then each zero is shown to lie on the critical line Re s = 1/2 exactly, not merely near it. The functional equation and \(\zeta(\bar s) = \overline{\zeta(s)}\) pair every zero \(\rho\) with \(1 - \bar\rho\), its mirror image in the critical line. Take a small disc centred on the line. It is its own mirror image. If it is proved to hold exactly one zero, that zero is its own mirror image, and so its real part is 1/2. The proof that the disc holds exactly one zero is Rouché's theorem on a Taylor model of ζ, <code>zeroCount() === 1</code>.</p>
+<p>Each entry's <code>onCriticalLine</code> records whether that proof went through, and <code>allOnCriticalLine</code> is the hypothesis verified for the range searched.</p>
+<div class="tablewrap"><table class="ref">
+<tr><th>call</th><th>returns</th></tr>
+<tr><td>gamma(z, { bits }), rgamma(z), logGamma(z)</td><td>A Rect (or a model, for a model)</td></tr>
+<tr><td>zeta(s, { bits }), zetaTimesSMinus1(s)</td><td>A Rect (or a model)</td></tr>
+<tr><td>zetaZeros(t1, t2, { bits })</td><td><code>{ zeros: [{ t, enclosure, onCriticalLine }], count, complete, allOnCriticalLine }</code>; <code>t</code> is the interval holding the zero's height</td></tr>
+</table></div>
+<template data-runbox>
+// Gamma at a few points, checked against what is known.
+PRINT("Γ(1/2)²        =", gamma("1/2").mul(gamma("1/2")).toString(), "  (π)");
+PRINT("Γ(1 + i)       =", gamma("1 + i").toString(18));
+PRINT("Γ(−5/2 + 3i)   =", gamma("-5/2 + 3i").toString(12));
+PRINT("to 60 digits   :", gamma("1 + i", { bits: 220 }).toString(60));
+
+// Zeta
+PRINT("ζ(2)           =", zeta(2).toString(18), "  (π²/6)");
+PRINT("ζ(−1)          =", zeta(-1).toString(18), "  (−1/12)");
+PRINT("ζ(−2)          =", zeta(-2).toString(), "  (a trivial zero)");
+PRINT("ζ(1/2 + 100i)  =", zeta("1/2 + 100i").toString(15));
+
+// The pole of zeta has residue 1; the poles of gamma have residues (−1)ⁿ/n!.
+PRINT("Res ζ at 1     =", residue("zeta(z)", 1, { radius: "1/2" }).toString());
+PRINT("Res Γ at −3    =", residue("gamma(z)", -3, { radius: "1/2" }).toString(), "  (−1/6)");
+
+// The first zeros of zeta, each proved to be on the critical line.
+const z = zetaZeros(10, 35);
+PRINT("zeros with 10 &lt; t &lt; 35:", z.count, "  search complete:", z.complete, "  all on the line:", z.allOnCriticalLine);
+for (const p of z.zeros) PRINT("   1/2 + i·" + p.enclosure.toString(22).split("+ ")[1].replace("i ±", "  ±"), p.onCriticalLine ? " on the line" : "");
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

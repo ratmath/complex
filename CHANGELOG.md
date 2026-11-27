@@ -1,6 +1,36 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
+
+Phases 3, 4 and 6 of the roadmap, which completes it for this package.
+
+- `taylorModel`, `CTM`: complex Taylor models, a polynomial with a proven bound
+  on what it leaves out over a whole disc. Arithmetic, a checked reciprocal,
+  `exp log sqrt root pow sin cos tan sinh cosh tanh` of a model, `at`, `range`,
+  `derivative` (Cauchy's estimate), `integral`, and `zeroCount` (Rouché).
+  The principal branches are refused on a disc that reaches their cut.
+- `Contour`, `contourIntegral`, `residueSum`: paths of segments and circular
+  arcs through exact points, integrated to a rectangle certain to contain the
+  answer, with subdivision where the integrand needs it.
+- `argumentPrinciple`, `countZeros`: zeros minus poles inside a contour as a
+  proven whole number, from the winding of the image, with no derivative.
+- `zeros`: every zero of an analytic function in a rectangle, isolated, with
+  multiplicities, by exclusion, Rouché's theorem and an interval Newton step;
+  the count is proved and what could not be settled is reported.
+- `laurent`, `residue`, `singularities`: Laurent coefficients as rectangles,
+  residues, and the kind of each singularity of a formula (pole with its
+  order, removable, essential, branch point) from proven counts.
+- `realLineIntegral`, `trigIntegral`: integrals of rational functions over the
+  real line (with an optional e^(iax)) and of rational functions of cos and
+  sin over a period, by residues, with the steps of the argument returned.
+- `gamma`, `rgamma`, `logGamma`, `zeta`, `zetaTimesSMinus1`: the gamma and
+  Riemann zeta functions for complex arguments at any precision, on points,
+  enclosures and Taylor models. `zetaZeros` isolates the zeros in a range of
+  heights and proves each to lie on the critical line.
+- `Disc.toString` writes a centre with long fractions in decimals.
+- `plan` is now empty.
+- Docs: six topic pages (Taylor models, contour integrals, zeros, residues,
+  real integrals, gamma and zeta) and an explore panel for zeros and poles.
 
 - `@ratmath/core` is now a peer dependency (`>=0.10.0 <0.12.0`): the package
   uses the program's own copy of Core instead of bringing its own, so Core 0.11
