@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Requires Core 0.12: the `@ratmath/core` peer range is now `>=0.12.0` (Core 0.12 returns Integers from `floor`/`ceil`/`trunc`/`round` and rounds half up by default).
 - `cauchyRiemann(u, v)`: checks the Cauchy–Riemann equations for f = u + iv
   given as formulas in x and y, with f′ when they hold and a certified
   witness point when they fail.
